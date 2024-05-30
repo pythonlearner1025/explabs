@@ -1,0 +1,72 @@
+.App {
+  text-align: center;
+  height: 100vh;
+}
+
+.logo {
+  animation: logo-spin infinite 20s linear;
+  pointer-events: none;
+  margin-left: 20px;
+}
+
+.title{
+  margin-left: 10px;
+}
+
+.gutter {
+  background-color: #eee;
+  background-repeat: no-repeat;
+  background-position: 50%;
+}
+
+.gutter_col_1, .gutter_col_2 {
+  cursor: col-resize;
+}
+
+.navbar {
+  height: 10vh;
+  border-bottom: 1px solid black;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  text-align: justify;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.link {
+  color: #b318f0;
+}
+
+.leftpanel {
+  flex: 2; /* 20% */
+  border-right: 1px solid black;
+}
+
+.playground {
+  flex: 6; /* 60% */
+}
+
+.rightpanel {
+  flex: 2; /* 20% */
+  border-left: 1px solid black;
+}
+
+.main {
+  display: flex;
+  flex-direction: row;
+  height: 90vh;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

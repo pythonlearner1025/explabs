@@ -1,0 +1,9 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+.header {
+    text-align: left;
+    margin-left: 3rem;
+    margin-top: 1rem;
+}
