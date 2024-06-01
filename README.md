@@ -1,6 +1,5 @@
 # TODO
-- use typescript
-- vector datatype 
+- datatypes 
 - leftpane;: vector library
 - rightpanel: model control
 - notebook: cells + metadata (title, date, history trace)

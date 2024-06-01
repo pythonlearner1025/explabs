@@ -1,0 +1,112 @@
+.master-container {
+    border-left: 5px solid rgb(42, 184, 255);
+}
+
+.cell{
+    display: flex;
+    flex-direction: row;
+    /* flush with playground header */
+    border-bottom: 1px solid rgb(176, 176, 176);
+    margin-left: calc(3rem - 5px);
+    margin-top: 0.3rem;
+}
+
+.cell-header{
+    text-align: left;
+    width: 3rem;
+    font-size: 15px; /* Adjusted text size */
+    font-weight: bold;
+}
+
+.cell-contents{
+    margin-bottom: 1rem;
+    width: 100%
+}
+.content{
+    margin-left: 1.5rem;
+    margin-top: 1rem;
+    text-align: left;
+    width: 100%
+}
+
+.content-header{
+    font-size: 12px;
+    font-weight: bold; /* TODO adjust boldness */
+}
+.content-text{
+    font-size: 12px;
+}
+
+.content-placeholder{
+    color: #999;
+    font-size: 12px;
+}
+
+.content-clear-text{
+    color: #999;
+    font-size: 12px;
+    margin-top: 1rem;
+    cursor: pointer;
+    display: inline-block;
+    width: fit-content;
+    padding: 0;
+    margin-top: 1rem;
+}
+
+.prompt-input {
+    border: none;
+    outline: none;
+    font-family: 'Your Preferred Font', sans-serif;
+    font-size: 12px;
+    font-weight: normal;
+    width: calc(100% - 3rem); 
+    resize: none;
+    overflow: hidden;
+}
+
+.prompt-input::placeholder {
+    color: #999;
+}
+
+.controls-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+.knob-container {
+    margin-right: 1rem;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+.controls {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+.controls-reset {
+    text-align: right;
+    margin-right: 0.5rem;
+    color: #999;
+    font-size: 12px;
+    cursor: pointer;
+}
+.knob-inner {
+    width: 50px;
+    height: 50px;
+    transform-origin: 50% 50%; /* Ensure the center of the knob is the origin */
+}
+
+.knob-inner-meter{
+    margin-top: 0.2rem;
+    text-align: center;
+    font-size: 12px;
+}
+  
+.knob-name {
+    font-size: 10px;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
