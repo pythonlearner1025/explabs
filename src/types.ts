@@ -30,3 +30,14 @@ export interface CellData {
     input: CellInput;
     output: CellOutput;
 }
+
+export interface Token {
+    text: string
+    corrs: Record<string, number> 
+}
+
+export interface Message {
+    role: string
+    content: string
+    tokens: Token[]
+}

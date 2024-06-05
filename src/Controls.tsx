@@ -1,6 +1,7 @@
 import "./styles/cell.css"
 import {CellInput, Vector, ControlInput} from './types'
 import Knob from "./Knob"
+import Slider from "./Slider"
 import {onMount} from "solid-js"
 
 function Controls({ ctrlInput, onUpdateVector }: { ctrlInput: Signal<ControlInput>, onUpdateVector: (newVector: Vector) => void }) {
@@ -28,7 +29,7 @@ function Controls({ ctrlInput, onUpdateVector }: { ctrlInput: Signal<ControlInpu
             <div class="controls-container">
                 {Object.values(ctrlInput().vectors).map((vector, idx) => {
                     return (
-                        <Knob 
+                        <Slider
                         vector={vector}
                         onChangeVectorCoeff={handleVectorChange}
                         />

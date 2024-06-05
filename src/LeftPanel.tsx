@@ -10,6 +10,9 @@ function LeftPanel({ctrlInput, onUpdateVector} : {ctrlInput: any, onUpdateVector
   })
   return (
     <div class={styles.leftpanel}>
+      <div class={styles.controlheader}>
+          Controls
+      </div>
       <Controls ctrlInput={ctrlInput} onUpdateVector={(vector)=>onUpdateVector(vector)} />
     </div>
   );

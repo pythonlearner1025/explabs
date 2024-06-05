@@ -34,7 +34,6 @@ function App() {
 
   return (
     <div ref={setGridRef} class={styles.App}>
-      <Navbar/>
       <div class={styles.main}>
         <LeftPanel ctrlInput={ctrlInput} onUpdateVector={handleVectorUpdate}/>
         <div class={styles.gutter_col_1}></div>
