@@ -5,6 +5,7 @@ const happyVector: Vector = {
   desc: "",
   coeff: 0,
   color: "#FFE7AA",
+  sign: 1
 };
 
 const sadVector: Vector = {
@@ -12,6 +13,7 @@ const sadVector: Vector = {
   desc: "",
   coeff: 0,
   color: "#9CACFF",
+  sign: 1
 };
 
 const angryVector: Vector = {
@@ -19,38 +21,67 @@ const angryVector: Vector = {
   desc: "",
   coeff: 0,
   color: "#FF6F6F",
+  sign: 1
 };
 
-const refusalVector : Vector = {
-    name: "refusal",
-    desc: "",
-    coeff: 0,
-    color: "#A020F0"
-}
+const refusalVector: Vector = {
+  name: "refusal",
+  desc: "",
+  coeff: 0,
+  color: "#A020F0",
+  sign: 1
+};
 
-export const defaultControlInput : ControlInput = {
-    vectors: {
-    [happyVector.name] : happyVector,
+const disgustVector: Vector = {
+  name: "disgust",
+  desc: "",
+  coeff: 0,
+  color: "#8B4513",
+  sign: 1
+};
+
+const fearVector: Vector = {
+  name: "fear",
+  desc: "",
+  coeff: 0,
+  color: "#000000",
+  sign: 1
+};
+
+const surpriseVector: Vector = {
+  name: "surprise",
+  desc: "",
+  coeff: 0,
+  color: "#FFC0CB",
+  sign: 1
+};
+
+const succintnessVector: Vector = {
+  name: "succintness",
+  desc: "",
+  coeff: 0,
+  color: "#008000",
+  sign: -1 
+};
+
+const honestyVector: Vector = {
+  name: "honesty",
+  desc: "",
+  coeff: 0,
+  color: "#C0C0C0",
+  sign: 1
+};
+
+export const defaultControlInput: ControlInput = {
+  vectors: {
+    [happyVector.name]: happyVector,
     [sadVector.name]: sadVector,
     [angryVector.name]: angryVector,
-    [refusalVector.name]: refusalVector 
-    }
-}
-
-export const defaultCell = () => ({
-  id: crypto.randomUUID(),
-  input: {
-    prompt: "",
-    vectors: {
-      [happyVector.name]: happyVector,
-      [sadVector.name]: sadVector,
-      [angryVector.name]: angryVector,
-      [refusalVector.name]: refusalVector
-    },
+    [refusalVector.name]: refusalVector,
+    [disgustVector.name]: disgustVector,
+    [fearVector.name]: fearVector,
+    [surpriseVector.name]: surpriseVector,
+    [succintnessVector.name]: succintnessVector,
+    [honestyVector.name]: honestyVector,
   },
-  output: {
-    baseline: [],
-    control: [],
-    corrs: [],
-  },
-});
+};

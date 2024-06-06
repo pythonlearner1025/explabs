@@ -1,5 +1,4 @@
-import styles from "./styles/App.module.css";
-import { createSignal, onCleanup } from "solid-js";
+import { createSignal, createEffect, onMount, onCleanup } from "solid-js";
 import Chat from "./Chat";
 import { Message, ControlInput } from "./types.ts";
 import { defaultCell } from "./constants.ts";
@@ -12,16 +11,22 @@ function Playground({ playId, clearPlayground, ctrlInput }: { playId: string, cl
   const [controlMessage, setControlMessage] = createSignal([])  
   const [prompt, setPrompt] = createSignal('')
 
-  const saveState = () => {
-    // Implement saving to backend here
-  };
-
-  // Warn user about unsaved changes on page refresh
+  let textarea;
   const handleBeforeUnload = (event: any) => {
-    event.preventDefault();
-    event.returnValue = ""; // Standard for most browsers
+//    event.preventDefault();
+ //   event.returnValue = ""; // Standard for most browsers
+    handleResetPlayground()
     return "You have unsaved changes! Are you sure you want to leave?";
   };
+
+  onMount(() => {
+    window.addEventListener("beforeunload", handleBeforeUnload);
+  });
+
+  // Cleanup before component unmounts
+  onCleanup(() => {
+    window.removeEventListener("beforeunload", handleBeforeUnload);
+  });
 
   const handleResetPlayground = () => {
     fetch(`http://localhost:4000/clear`, {
@@ -49,9 +54,11 @@ function Playground({ playId, clearPlayground, ctrlInput }: { playId: string, cl
 
   const handlePromptSubmit = async (event: any) => {
     event.preventDefault();
+
     // add message
     const prompt = event.target.value.trim();
     event.target.value = ''
+    textarea.style.height = '18px';
     setPrompt('')
     addMessage("user", prompt)
     addMessage("assistant", "")
@@ -131,18 +138,15 @@ function Playground({ playId, clearPlayground, ctrlInput }: { playId: string, cl
     }
   };
 
-  // TODO enable in prod
-  //window.addEventListener('beforeunload', handleBeforeUnload);
 
-  // Cleanup before component unmounts
-  onCleanup(() => {
-    window.removeEventListener("beforeunload", handleBeforeUnload);
-  });
 
   return (
     <div class="playground-container">
       <div class="header-container">
         <div class="header-title">Playground</div>
+        <div class="header-model">
+          Llama-3-8B-Instruct
+        </div>
       </div>
       <div class="chats-container">
         <Chat type={'baseline'} messages={baselineMessage} />
@@ -151,13 +155,17 @@ function Playground({ playId, clearPlayground, ctrlInput }: { playId: string, cl
       <div class="message-send">
         <div class="message-send-container">
             <TextareaAutosize
+            ref={textarea}
             value={prompt()}
-            onChange={(event) => setPrompt(event.target.value)}
-            onKeyDown={(event) => {
-            if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-                handlePromptSubmit(event);
-            }
+            onChange={(event) => {
+              setPrompt(event.target.value)
             }}
+            onKeyDown={(event) => {
+              if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                  handlePromptSubmit(event);
+              }
+            }}
+            maxRows={18}
             class="prompt-input"
             placeholder="Enter your message here"
             /> 

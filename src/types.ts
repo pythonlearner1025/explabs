@@ -5,6 +5,7 @@ export type Vector = {
     coeff: number;
     desc: string;
     color: string;
+    sign: number;
 };
 
 // Define the structure for the input part of a cell

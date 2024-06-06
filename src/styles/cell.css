@@ -41,7 +41,7 @@
     font-weight: normal;
     width: calc(100% - 3rem); 
     resize: none;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 .prompt-input::placeholder {
@@ -51,7 +51,7 @@
 .controls-container {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: left;
     margin-bottom: 1rem;
 }
 .knob-container {
@@ -73,21 +73,4 @@
     color: #999;
     font-size: 12px;
     cursor: pointer;
-}
-.knob-inner {
-    width: 50px;
-    height: 50px;
-    transform-origin: 50% 50%; /* Ensure the center of the knob is the origin */
-}
-
-.knob-inner-meter{
-    margin-top: 0.2rem;
-    text-align: center;
-    font-size: 12px;
-}
-  
-.knob-name {
-    font-size: 10px;
-    text-align: center;
-    margin-bottom: 0.5rem;
 }

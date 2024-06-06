@@ -34,6 +34,7 @@ function App() {
 
   return (
     <div ref={setGridRef} class={styles.App}>
+      <Navbar/>
       <div class={styles.main}>
         <LeftPanel ctrlInput={ctrlInput} onUpdateVector={handleVectorUpdate}/>
         <div class={styles.gutter_col_1}></div>
@@ -41,7 +42,6 @@ function App() {
           setCurrentPlayground(newid)
         }}/>
         <div class={styles.gutter_col_2}></div>
-        <RightPanel/>
       </div>
     </div>
   );
