@@ -138,7 +138,85 @@ function Playground({ playId, clearPlayground, ctrlInput }: { playId: string, cl
     }
   };
 
-
+const handleSubmit = async (prompt: string) => {
+    textarea.style.height = '18px';
+    setPrompt('')
+    addMessage("user", prompt)
+    addMessage("assistant", "")
+    if (prompt !== "") {
+      try {
+        console.log({
+            playId,
+            prompt,
+            type: 'baseline',
+            vecs: [],
+          })
+        const [baselineResponse, controlResponse] = await Promise.all([
+             fetch(`http://localhost:4000/chat`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  playId,
+                  prompt,
+                  type: 'baseline',
+                  vecs: [],
+                }),
+              }),
+              fetch(`http://localhost:4000/chat`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  playId,
+                  prompt,
+                  type: 'control',
+                  vecs: Object.values(ctrlInput().vectors),
+                }),
+            })
+        ]);
+  
+        const baselineReader = baselineResponse?.body?.getReader();
+        const controlReader = controlResponse.body?.getReader();
+        const decoder = new TextDecoder("utf-8");
+  
+        async function readStream(
+          reader: ReadableStreamDefaultReader<Uint8Array> | undefined,
+          messages: any,
+          setter: any
+        ) {
+          if (!reader) {
+            return;
+          }
+          const { done, value } = await reader.read();
+          if (done) {
+            return;
+          }
+          const decodedValue = decoder.decode(value, { stream: true });
+          const chunks = decodedValue.split("\n");
+          for (const chunk of chunks) {
+            const tokenObj = parseToken(chunk);
+            console.log(messages());
+            const msg = messages()
+            if (tokenObj !== null) {
+               const newMsg = {
+                role: "assistant",
+                content: "",
+                tokens: [...msg[msg.length-1].tokens, {text: tokenObj.data, corrs: []}] 
+               }
+               setter([...msg.slice(0, -1), newMsg]) 
+            }
+          }
+          await readStream(reader, messages, setter);
+        }
+        await Promise.all([
+          readStream(baselineReader, baselineMessage, setBaselineMessage),
+          readStream(controlReader, controlMessage, setControlMessage),
+        ]);
+      } catch (error) {
+        console.error("Error streaming response:", error);
+      } finally {
+      }
+    }
+  };
 
   return (
     <div class="playground-container">
@@ -161,7 +239,7 @@ function Playground({ playId, clearPlayground, ctrlInput }: { playId: string, cl
               setPrompt(event.target.value)
             }}
             onKeyDown={(event) => {
-              if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+              if (event.key === "Enter") {
                   handlePromptSubmit(event);
               }
             }}
@@ -169,7 +247,7 @@ function Playground({ playId, clearPlayground, ctrlInput }: { playId: string, cl
             class="prompt-input"
             placeholder="Enter your message here"
             /> 
-            <div class="send-button" onClick={()=>{}}>
+            <div class="send-button" onClick={()=>{handleSubmit(prompt())}}>
                 <svg fill="#000000" height="800px" width="800px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 495.003 495.003" xml:space="preserve">
                     <g id="XMLID_51_">
                     <path id="XMLID_53_" d="M164.711,456.687c0,2.966,1.647,5.686,4.266,7.072c2.617,1.385,5.799,1.207,8.245-0.468l55.09-37.616 l-67.6-32.22V456.687z"/>

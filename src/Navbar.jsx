@@ -8,7 +8,7 @@ function Navbar() {
       <h4 className={styles.title}>EigenLabs</h4>
       <div className={styles.navbar_div}></div>
       <div className={styles.navbar_status}>
-       <div className={styles.navbar_status_header}>alpha release</div>
+       <div className={styles.navbar_status_header}>research preview</div>
       </div>
     </div>
   );
