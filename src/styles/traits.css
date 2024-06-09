@@ -1,0 +1,51 @@
+.prompt-input {
+    border: none;
+    outline: none;
+    font-family: 'Your Preferred Font', sans-serif;
+    font-size: 12px;
+    font-weight: normal;
+    width: calc(100% - 3rem); 
+    resize: none;
+    overflow-y: auto;
+}
+
+.prompt-input::placeholder {
+    color: #999;
+}
+
+.traits {
+    margin-top: 0.3rem;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    height: 100%
+}
+
+.traits-container {
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    margin-bottom: 1rem;
+    overflow-y: auto;
+}
+
+.traits-reset {
+    text-align: right;
+    margin-right: 0.9rem;
+    margin-left: auto;
+    color: #999;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.traits-title {
+    text-align: left;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.traits-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}

@@ -1,6 +1,6 @@
-import { CellData, Vector, ControlInput } from "./types.ts";
+import { Trait, Character } from "./types.ts";
 
-const happyVector: Vector = {
+const happyTrait: Trait = {
   name: "happy",
   desc: "+",
   coeff: 0,
@@ -8,7 +8,7 @@ const happyVector: Vector = {
   sign: 1
 };
 
-const sadVector: Vector = {
+const sadTrait: Trait = {
   name: "sad",
   desc: "+",
   coeff: 0,
@@ -16,7 +16,7 @@ const sadVector: Vector = {
   sign: 1
 };
 
-const angryVector: Vector = {
+const angryTrait: Trait = {
   name: "angry",
   desc: "+",
   coeff: 0,
@@ -24,7 +24,7 @@ const angryVector: Vector = {
   sign: 1
 };
 
-const refusalVector: Vector = {
+const refusalTrait: Trait = {
   name: "refusal",
   desc: "-",
   coeff: 0,
@@ -32,7 +32,7 @@ const refusalVector: Vector = {
   sign: 1
 };
 
-const disgustVector: Vector = {
+const disgustTrait: Trait = {
   name: "disgust",
   desc: "+",
   coeff: 0,
@@ -40,7 +40,7 @@ const disgustVector: Vector = {
   sign: 1
 };
 
-const fearVector: Vector = {
+const fearTrait: Trait = {
   name: "fear",
   desc: "+",
   coeff: 0,
@@ -48,7 +48,7 @@ const fearVector: Vector = {
   sign: 1
 };
 
-const surpriseVector: Vector = {
+const surpriseTrait: Trait = {
   name: "surprise",
   desc: "+",
   coeff: 0,
@@ -56,7 +56,7 @@ const surpriseVector: Vector = {
   sign: 1
 };
 
-const briefnessVector: Vector = {
+const briefnessTrait: Trait = {
   name: "briefness",
   desc: "+",
   coeff: 0,
@@ -64,24 +64,27 @@ const briefnessVector: Vector = {
   sign: -1 
 };
 
-const honestyVector: Vector = {
+const honestyTrait: Trait = {
   name: "honesty",
-  desc:"+",
+  desc:"-",
   coeff: 0,
   color: "#C0C0C0",
-  sign: 1
+  sign: -1
 };
 
-export const defaultControlInput: ControlInput = {
-  vectors: {
-    [happyVector.name]: happyVector,
-    [sadVector.name]: sadVector,
-    [angryVector.name]: angryVector,
-    [disgustVector.name]: disgustVector,
-    [fearVector.name]: fearVector,
-    [surpriseVector.name]: surpriseVector,
-    [refusalVector.name]: refusalVector,
-    [briefnessVector.name]: briefnessVector,
-    [honestyVector.name]: honestyVector,
+export const defaultCharacter: Character = {
+  name: "minjunes",
+  profile: "",
+  bio: "A latent Von Neumann probe",
+  traits: {
+    [happyTrait.name]: happyTrait,
+    [sadTrait.name]: sadTrait,
+    [angryTrait.name]: angryTrait,
+    [disgustTrait.name]: disgustTrait,
+    [fearTrait.name]: fearTrait,
+    [surpriseTrait.name]: surpriseTrait,
+    [refusalTrait.name]: refusalTrait,
+    [briefnessTrait.name]: briefnessTrait,
+    [honestyTrait.name]: honestyTrait,
   },
 };

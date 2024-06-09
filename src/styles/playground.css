@@ -92,9 +92,9 @@ body {
 .message {
     display: flex;
     flex-direction: column;
-    margin: 0.69rem;
+    padding: 0.5rem;
     text-align: left;
-    width: 100%
+    max-width: 100%
 }
 
 .role, .content {
@@ -177,15 +177,19 @@ body {
 .ctrls-tag{
     display: flex;
     flex-direction: row;
-    height: fit-content;
     padding-right: 0.3rem;
     padding-top: 0.3rem;
     padding-bottom: 0.3rem;
+    width: 100%;
+    flex-wrap: wrap;
+
 }
 .tag {
+    height: fit-content;
     display: flex;
     flex-direction: row;
     margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
     background-color:#f1f1f1;
     padding: 0.3rem;
     border-radius: 3px;

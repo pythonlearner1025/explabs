@@ -9,6 +9,7 @@ import ResizeOutIcon from "./assets/resize-out.svg";
 // TODO: allow code syntax highlighting
 // https://github.com/aidanaden/solid-highlight?tab=readme-ov-file
 function wrap() {
+
 }
 
 function constructMessage(tokens: Token[]): string {
@@ -27,14 +28,14 @@ function ctrlsTag(ctrls: Vector[]) {
                         {vec.desc}
                         {vec.name}
                     </div>
-                    <div class="tag-coeff">{Math.floor(vec.coeff * 100)}%</div>
+                    <div class="tag-coeff">{Math.floor(Math.max(Math.min(0, vec.coeff), 1) * 100)}%</div>
                 </div>
             ))}
         </div>
     )
 }
 
-function Chat({ type, messages, onShrunk, setRef }) {
+function Chat({ character, type, messages, onShrunk, setRef }) {
     const [autoScroll, setAutoScroll] = createSignal(true);
     const [chatInnerRef, setChatInnerRef] = createSignal(null)
     const [chatOuterRef, setChatOuterRef] = createSignal(null)
@@ -91,7 +92,7 @@ function Chat({ type, messages, onShrunk, setRef }) {
                             </div>
                         ) : (
                             <div>
-                                <div class="message-role">{message.role == "assistant" ? "AI" : "You"}</div>
+                                <div class="message-role">{message.role == "assistant" ? character().name : "You"}</div>
                                 {type === 'control' && message.role == 'assistant' ? ctrlsTag(message.controls): <div></div>}
                                 <div ref={msgRef} class="message-content">{message.role === "user" 
                                 ? message.content 

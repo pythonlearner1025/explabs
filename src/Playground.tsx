@@ -1,12 +1,11 @@
 import { createSignal, createEffect, onMount, onCleanup } from "solid-js";
 import Chat from "./Chat";
-import { Message, Vector } from "./types.ts";
+import { Message, Trait } from "./types.ts";
 import {parseToken, parseErrorMsg}  from "./utils"
 import TextareaAutosize from "solid-textarea-autosize"
-import Divider from "./Divider.tsx"
 import "./styles/playground.css";
 
-function Playground({ playId, clearPlayground, ctrlInput }: { playId: string, clearPlayground : (id: string) => void, ctrlInput:any }) {
+function Playground({ playId, clearPlayground, character }: { playId: string, clearPlayground : (id: string) => void, character:any }) {
   const [baselineMessage, setBaselineMessage] = createSignal([])  
   const [controlMessage, setControlMessage] = createSignal([])  
   const [prompt, setPrompt] = createSignal('')
@@ -30,7 +29,7 @@ function Playground({ playId, clearPlayground, ctrlInput }: { playId: string, cl
   });
 
   const handleResetPlayground = () => {
-    fetch(`http://localhost:4000/clear`, {
+    fetch(`${import.meta.env.VITE_ENDPOINT}/clear`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -43,7 +42,7 @@ function Playground({ playId, clearPlayground, ctrlInput }: { playId: string, cl
     clearPlayground(crypto.randomUUID())
   }
 
-  const addMessage = (role: string, content: string, ctrls: Vector[]) => {
+  const addMessage = (role: string, content: string, ctrls: Trait[]) => {
     const msgToAdd : Message = {
         "role": role, 
         "content": role == 'user' ? content : '',
@@ -57,7 +56,6 @@ function Playground({ playId, clearPlayground, ctrlInput }: { playId: string, cl
 
 const handleSubmit = async (inputPrompt: string, event : any = null) => {
   var prompt = inputPrompt
-  const ctrls : Vector[] = Object.values(ctrlInput().vectors)
   if (event) {
     event.preventDefault()
     prompt = event.target.value.trim()
@@ -66,29 +64,29 @@ const handleSubmit = async (inputPrompt: string, event : any = null) => {
   console.log(prompt, event)
   textarea.style.height = '19px';
   setPrompt('')
-  addMessage("user", prompt, ctrls)
-  addMessage("assistant", "", ctrls)
+  addMessage("user", prompt, character)
+  addMessage("assistant", "", character)
   if (prompt != null) {
     try {
       const [baselineResponse, controlResponse] = await Promise.all([
-            fetch(`http://localhost:4000/chat`, {
+            fetch(`${import.meta.env.VITE_ENDPOINT}/chat`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 playId,
                 prompt,
                 type: 'baseline',
-                vecs: [],
+                character: null,
               }),
             }),
-            fetch(`http://localhost:4000/chat`, {
+            fetch(`${import.meta.env.VITE_ENDPOINT}/chat`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 playId,
                 prompt,
                 type: 'control',
-                vecs: ctrls,
+                character: character(),
               }),
           })
       ]);
@@ -176,8 +174,8 @@ const handleSubmit = async (inputPrompt: string, event : any = null) => {
         </div>
       </div>
       <div class="chats-container"  ref={setChatRef}>
-        <Chat type={'baseline'} messages={baselineMessage} onShrunk={(b)=>setLeftShrunk(b)} setRef={setChatRef}/>
-        <Chat type={'control'} messages={controlMessage} onShrunk={(b)=>setRightShrunk(b)} setRef={setChatRef}/>
+        <Chat character={character} type={'baseline'} messages={baselineMessage} onShrunk={(b)=>setLeftShrunk(b)} setRef={setChatRef}/>
+        <Chat character={character} type={'control'} messages={controlMessage} onShrunk={(b)=>setRightShrunk(b)} setRef={setChatRef}/>
       </div>
       <div class="message-send" style={{width: leftShrunk() && rightShrunk() ? `${chatRef().getBoundingClientRect().width*2-1.5}px` : null}}>
         <div class="message-send-container">
