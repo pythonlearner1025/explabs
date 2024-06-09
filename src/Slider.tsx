@@ -29,7 +29,7 @@ const Slider = ({ vector, onChangeVectorCoeff }: { vector: Vector, onChangeVecto
 
   const handleMouseDown = (event: MouseEvent) => {
     if (rect()) {
-      console.log(rect())
+      //console.log(rect())
       const clickX = event.clientX - rect().left;
       const newCoeff = Math.min(Math.max(clickX / rect().width, 0), maxCoeff);
       setCoeff(newCoeff);
@@ -48,6 +48,7 @@ const Slider = ({ vector, onChangeVectorCoeff }: { vector: Vector, onChangeVecto
       return;
     }
     const dx =  mouseX - startX();
+    //console.log(dx)
     var newCoeff = coeff() + dx/rect().width;
     setStartX(mouseX);
     setCoeff(Math.min(Math.max(newCoeff, 0), maxCoeff));
@@ -55,7 +56,7 @@ const Slider = ({ vector, onChangeVectorCoeff }: { vector: Vector, onChangeVecto
   };
 
   const handleMouseUp = () => {
-    console.log("called")
+    //console.log("called")
     setIsDragging(false);
     window.removeEventListener("mousemove", handleMouseMove);
     window.removeEventListener("mouseup", handleMouseUp);
@@ -70,10 +71,33 @@ const Slider = ({ vector, onChangeVectorCoeff }: { vector: Vector, onChangeVecto
     }
   };
 
+  function hexToRgb(hex: string): [number, number, number] {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return [r, g, b];
+  }
+  
+  function computeColor(hexColor: string, coeff: number): string {
+    const rgb = hexToRgb(hexColor);
+    const [r, g, b] = rgb;
+    const scaledR = Math.round(r);
+    const scaledG = Math.round(g);
+    const scaledB = Math.round(b);
+    return `rgba(${scaledR}, ${scaledG}, ${scaledB}, ${coeff})`;
+  }
+
   return (
     <div class="slider">
       <div class="slider-container">
-        <div class="slider-name">{vector.name}</div>
+        <div class="slider-header">
+          <div class="slider-header-desc">
+          {vector.desc}
+          </div>
+          <div class="slider-header-name">
+           {vector.name}
+          </div>
+        </div>
           <div class="slider-container-inner">
             <div
               class="slider-bar"
@@ -82,12 +106,18 @@ const Slider = ({ vector, onChangeVectorCoeff }: { vector: Vector, onChangeVecto
               onMouseDown={handleMouseDown}
               onClick={handleClick}
               style={{
-                background: `linear-gradient(to right, ${vector.color} 0%, ${vector.color} ${coeff()/maxCoeff*100}%, #eee ${coeff()/maxCoeff*100}%, #eee 100%)`,
+                background: `linear-gradient(to right, ${computeColor(vector.color, coeff() / maxCoeff)} 0%, ${computeColor(vector.color, coeff() / maxCoeff)} ${(coeff() / maxCoeff) * 100}%, #eee ${(coeff() / maxCoeff) * 100}%, #eee 100%)`,
+
               }}
             >
+              <div class="slider-dividers">
+                {Array.from({ length: Math.floor(1 / scrollSpeed)+1}, (_, i) => (
+                  <div class="slider-divider" />
+                ))}
+              </div>
             </div>
             <div class="slider-value">
-              {Math.min(Math.max(coeff(),0), 1.0).toFixed(2)}
+              {(Math.min(Math.max(coeff(),0), 1.0)*100).toFixed(0)}%
             </div>
         </div>
       </div>

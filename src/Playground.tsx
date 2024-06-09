@@ -1,15 +1,16 @@
 import { createSignal, createEffect, onMount, onCleanup } from "solid-js";
 import Chat from "./Chat";
-import { Message, ControlInput } from "./types.ts";
-import { defaultCell } from "./constants.ts";
-import {parseToken}  from "./utils"
+import { Message, Vector } from "./types.ts";
+import {parseToken, parseErrorMsg}  from "./utils"
 import TextareaAutosize from "solid-textarea-autosize"
+import Divider from "./Divider.tsx"
 import "./styles/playground.css";
 
 function Playground({ playId, clearPlayground, ctrlInput }: { playId: string, clearPlayground : (id: string) => void, ctrlInput:any }) {
   const [baselineMessage, setBaselineMessage] = createSignal([])  
   const [controlMessage, setControlMessage] = createSignal([])  
   const [prompt, setPrompt] = createSignal('')
+  const [broke, setBroke] = createSignal(false)
 
   let textarea;
   const handleBeforeUnload = (event: any) => {
@@ -42,181 +43,129 @@ function Playground({ playId, clearPlayground, ctrlInput }: { playId: string, cl
     clearPlayground(crypto.randomUUID())
   }
 
-  const addMessage = (role: string, content: string) => {
+  const addMessage = (role: string, content: string, ctrls: Vector[]) => {
     const msgToAdd : Message = {
         "role": role, 
         "content": role == 'user' ? content : '',
-        "tokens": []
+        "tokens": [],
+        controls: ctrls
     }
     setBaselineMessage([...baselineMessage(), msgToAdd])
     setControlMessage([...controlMessage(), msgToAdd])
   }
 
-  const handlePromptSubmit = async (event: any) => {
-    event.preventDefault();
 
-    // add message
-    const prompt = event.target.value.trim();
+const handleSubmit = async (inputPrompt: string, event : any = null) => {
+  var prompt = inputPrompt
+  const ctrls : Vector[] = Object.values(ctrlInput().vectors)
+  if (event) {
+    event.preventDefault()
+    prompt = event.target.value.trim()
     event.target.value = ''
-    textarea.style.height = '18px';
-    setPrompt('')
-    addMessage("user", prompt)
-    addMessage("assistant", "")
-
-    if (prompt !== "") {
-      try {
-        console.log({
-            playId,
-            prompt,
-            type: 'baseline',
-            vecs: [],
-          })
-        const [baselineResponse, controlResponse] = await Promise.all([
-             fetch(`http://localhost:4000/chat`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  playId,
-                  prompt,
-                  type: 'baseline',
-                  vecs: [],
-                }),
+  }
+  console.log(prompt, event)
+  textarea.style.height = '19px';
+  setPrompt('')
+  addMessage("user", prompt, ctrls)
+  addMessage("assistant", "", ctrls)
+  if (prompt != null) {
+    try {
+      const [baselineResponse, controlResponse] = await Promise.all([
+            fetch(`http://localhost:4000/chat`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                playId,
+                prompt,
+                type: 'baseline',
+                vecs: [],
               }),
-              fetch(`http://localhost:4000/chat`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  playId,
-                  prompt,
-                  type: 'control',
-                  vecs: Object.values(ctrlInput().vectors),
-                }),
-            })
-        ]);
-  
-        const baselineReader = baselineResponse?.body?.getReader();
-        const controlReader = controlResponse.body?.getReader();
-        const decoder = new TextDecoder("utf-8");
-  
-        async function readStream(
-          reader: ReadableStreamDefaultReader<Uint8Array> | undefined,
-          messages: any,
-          setter: any
-        ) {
-          if (!reader) {
-            return;
-          }
-          const { done, value } = await reader.read();
-          if (done) {
-            return;
-          }
-          const decodedValue = decoder.decode(value, { stream: true });
-          const chunks = decodedValue.split("\n");
-          for (const chunk of chunks) {
-            const tokenObj = parseToken(chunk);
-            console.log(messages());
-            const msg = messages()
-            if (tokenObj !== null) {
-               const newMsg = {
-                role: "assistant",
-                content: "",
-                tokens: [...msg[msg.length-1].tokens, {text: tokenObj.data, corrs: []}] 
-               }
-               setter([...msg.slice(0, -1), newMsg]) 
-            }
-          }
-          await readStream(reader, messages, setter);
+            }),
+            fetch(`http://localhost:4000/chat`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                playId,
+                prompt,
+                type: 'control',
+                vecs: ctrls,
+              }),
+          })
+      ]);
+
+      const baselineReader = baselineResponse?.body?.getReader();
+      const controlReader = controlResponse.body?.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      async function readStream(
+        reader: ReadableStreamDefaultReader<Uint8Array> | undefined,
+        messages: any,
+        setter: any
+      ) {
+        if (!reader) {
+          return;
         }
-        await Promise.all([
-          readStream(baselineReader, baselineMessage, setBaselineMessage),
-          readStream(controlReader, controlMessage, setControlMessage),
-        ]);
-      } catch (error) {
-        console.error("Error streaming response:", error);
-      } finally {
+        const { done, value } = await reader.read();
+        if (done) {
+          return;
+        }
+        const decodedValue = decoder.decode(value, { stream: true });
+        const chunks = decodedValue.split("\n");
+        for (const chunk of chunks) {
+          const tokenObj = parseToken(chunk);
+          const msg = messages()
+          if (tokenObj !== null) {
+            if (tokenObj.error) {
+              const errorMsg = {
+                role: "error",
+                content: parseErrorMsg(tokenObj.error),
+                tokens: [],
+                controls: []
+              }
+              setter([...msg.slice(0, -1), errorMsg])
+              setBroke(true)
+              console.log(errorMsg)
+              return;
+            }
+           // console.log(messages());
+              const newMsg = {
+              role: "assistant",
+              content: "",
+              tokens: [...msg[msg.length-1].tokens, {text: tokenObj.data, corrs: []}],
+              controls: ctrls
+              }
+              setter([...msg.slice(0, -1), newMsg]) 
+          }
+        }
+        await readStream(reader, messages, setter);
       }
+      await Promise.all([
+        readStream(baselineReader, baselineMessage, setBaselineMessage),
+        readStream(controlReader, controlMessage, setControlMessage),
+      ]);
+    } catch (error) {
+      
+      console.log("ERROR")
+      console.error("Error streaming response:", error);
+      const errorMsg = {
+        role: "system",
+        content: "Error",
+        tokens: [],
+        ctrls: []
+      }
+      setBaselineMessage([...baselineMessage(), errorMsg])
+      setControlMessage([...controlMessage(), errorMsg])
+      setBroke(true)
+    } finally {
+    }
     }
   };
 
-const handleSubmit = async (prompt: string) => {
-    textarea.style.height = '18px';
-    setPrompt('')
-    addMessage("user", prompt)
-    addMessage("assistant", "")
-    if (prompt !== "") {
-      try {
-        console.log({
-            playId,
-            prompt,
-            type: 'baseline',
-            vecs: [],
-          })
-        const [baselineResponse, controlResponse] = await Promise.all([
-             fetch(`http://localhost:4000/chat`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  playId,
-                  prompt,
-                  type: 'baseline',
-                  vecs: [],
-                }),
-              }),
-              fetch(`http://localhost:4000/chat`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  playId,
-                  prompt,
-                  type: 'control',
-                  vecs: Object.values(ctrlInput().vectors),
-                }),
-            })
-        ]);
-  
-        const baselineReader = baselineResponse?.body?.getReader();
-        const controlReader = controlResponse.body?.getReader();
-        const decoder = new TextDecoder("utf-8");
-  
-        async function readStream(
-          reader: ReadableStreamDefaultReader<Uint8Array> | undefined,
-          messages: any,
-          setter: any
-        ) {
-          if (!reader) {
-            return;
-          }
-          const { done, value } = await reader.read();
-          if (done) {
-            return;
-          }
-          const decodedValue = decoder.decode(value, { stream: true });
-          const chunks = decodedValue.split("\n");
-          for (const chunk of chunks) {
-            const tokenObj = parseToken(chunk);
-            console.log(messages());
-            const msg = messages()
-            if (tokenObj !== null) {
-               const newMsg = {
-                role: "assistant",
-                content: "",
-                tokens: [...msg[msg.length-1].tokens, {text: tokenObj.data, corrs: []}] 
-               }
-               setter([...msg.slice(0, -1), newMsg]) 
-            }
-          }
-          await readStream(reader, messages, setter);
-        }
-        await Promise.all([
-          readStream(baselineReader, baselineMessage, setBaselineMessage),
-          readStream(controlReader, controlMessage, setControlMessage),
-        ]);
-      } catch (error) {
-        console.error("Error streaming response:", error);
-      } finally {
-      }
-    }
-  };
+  const [leftShrunk, setLeftShrunk] = createSignal(false); // Add state for left Chat collapsed status
+  const [rightShrunk, setRightShrunk] = createSignal(false); // Add state for right Chat collapsed status
+  const [chatRef, setChatRef] = createSignal(null)
+
+  createEffect(() => {console.log(chatRef().getBoundingClientRect())})
 
   return (
     <div class="playground-container">
@@ -226,26 +175,28 @@ const handleSubmit = async (prompt: string) => {
           Llama-3-8B-Instruct
         </div>
       </div>
-      <div class="chats-container">
-        <Chat type={'baseline'} messages={baselineMessage} />
-        <Chat type={'control'} messages={controlMessage} />
+      <div class="chats-container"  ref={setChatRef}>
+        <Chat type={'baseline'} messages={baselineMessage} onShrunk={(b)=>setLeftShrunk(b)} setRef={setChatRef}/>
+        <Chat type={'control'} messages={controlMessage} onShrunk={(b)=>setRightShrunk(b)} setRef={setChatRef}/>
       </div>
-      <div class="message-send">
+      <div class="message-send" style={{width: leftShrunk() && rightShrunk() ? `${chatRef().getBoundingClientRect().width*2-1.5}px` : null}}>
         <div class="message-send-container">
             <TextareaAutosize
-            ref={textarea}
-            value={prompt()}
-            onChange={(event) => {
-              setPrompt(event.target.value)
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                  handlePromptSubmit(event);
-              }
-            }}
-            maxRows={18}
-            class="prompt-input"
-            placeholder="Enter your message here"
+              ref={textarea}
+              value={prompt()}
+              onChange={(event) => {
+                setPrompt(event.target.value)
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                    handleSubmit(prompt(), event=event);
+                }
+              }}
+              minRows={1.05}
+              maxRows={18}
+              class="prompt-input"
+              placeholder="Enter your message here"
+              disabled={broke()}
             /> 
             <div class="send-button" onClick={()=>{handleSubmit(prompt())}}>
                 <svg fill="#000000" height="800px" width="800px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 495.003 495.003" xml:space="preserve">

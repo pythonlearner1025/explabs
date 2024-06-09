@@ -1,7 +1,6 @@
 body {
     font-family: Arial, sans-serif;
 }
-
 /*TODO put all headers under one class*/
 .header-container {
     display: flex;
@@ -35,11 +34,7 @@ body {
     display: flex;
     flex-direction: row;
     height: 90%;
-    width: 100%
-}
-.vert-sep{
-    height: 100%;
-    border: 1px solid rgb(176, 176, 176);
+    width: 100%;
 }
 
 .message-send {
@@ -82,12 +77,24 @@ body {
     font-size: 16px;
 }
 
+.header-model{
+    position: absolute;
+    right: 2rem;
+    font-size: 12px;
+    font-weight: normal;
+    color:#939393;
+    display: flex;
+    flex-direction: row;
+}
+
+/* chaty msg stuff*/
+
 .message {
     display: flex;
     flex-direction: column;
     margin: 0.69rem;
     text-align: left;
-    /*background-color: #f0f0f0;*/
+    width: 100%
 }
 
 .role, .content {
@@ -98,7 +105,7 @@ body {
     width: 50%;
     height: 100%; 
     border-left: 1px solid #333;
-    border-right: 0.5px solid #333;
+    border-right: 0px solid #333;
     border-top: 1px solid #333;
     border-top-left-radius: 10px;
     overflow: hidden;
@@ -121,13 +128,16 @@ body {
     overflow-y: auto;
 } 
 
+.chat-collapse { 
+    font-size: 11px
+}
 /*control is right*/
 .chat-control-inner{
     width: 100%;
     height: 98%;
     color: #333;
-    overflow-x: hidden;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .message-role {
@@ -138,9 +148,15 @@ body {
 
 .message-content {
     font-size: 14px;
+    word-break: break-all;
 }
-
+.error-content{
+    font-size: 14px;
+    color: red;
+}
 .chat-header{
+    display: flex;
+    flex-direction: row;
     height: 2%;
     text-align: center;
     padding: 0.3rem;
@@ -149,12 +165,50 @@ body {
     color: #939393;
 }
 
-.header-model{
-    position: absolute;
-    right: 2rem;
-    font-size: 12px;
-    font-weight: normal;
-    color:#939393;
+.chat-collapse{
+    left: 1rem;
+}
+
+.chat-header-text {
+    flex-grow: 1;
+    text-align: center;
+}
+
+.ctrls-tag{
     display: flex;
     flex-direction: row;
+    height: fit-content;
+    padding-right: 0.3rem;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+}
+.tag {
+    display: flex;
+    flex-direction: row;
+    margin-right: 0.5rem;
+    background-color:#f1f1f1;
+    padding: 0.3rem;
+    border-radius: 3px;
+}
+.tag-name{
+    font-size: 9px;
+    align-items: center;
+    display: flex; /* Add this line */
+    font-weight: bold;
+}
+
+.tag-coeff{
+    font-size: 9px;
+    margin-left: 0.2rem;
+    font-weight: bold;
+}
+
+.tag-color {
+    margin-right: 0.3em; /* Add margin to the right of the SVG circle */
+}
+
+.chat-collapse img {
+    width: 10px;
+    height: 10px;
+    cursor:pointer
 }

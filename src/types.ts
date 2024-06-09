@@ -41,4 +41,5 @@ export interface Message {
     role: string
     content: string
     tokens: Token[]
+    controls: Vector[]
 }
