@@ -36,7 +36,7 @@ const disgustTrait: Trait = {
   name: "disgust",
   desc: "+",
   coeff: 0,
-  color: "#8B4513",
+  color: "#008000",
   sign: 1
 };
 
@@ -60,7 +60,7 @@ const briefnessTrait: Trait = {
   name: "briefness",
   desc: "+",
   coeff: 0,
-  color: "#008000",
+  color: "#8B4513",
   sign: -1 
 };
 

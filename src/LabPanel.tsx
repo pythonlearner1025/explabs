@@ -13,7 +13,7 @@ function CharacterPanel({character, onUpdateCharacter} : {character : any, onUpd
   return (
     <div class={styles.leftpanel}>
       <div class={styles.controlheader}>
-         Character   
+         Laboratory   
       </div>
       <div class={styles.profile}>
         <div class={styles.profilePic}>

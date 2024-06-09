@@ -1,6 +1,6 @@
 import styles from './styles/App.module.css';
 import Navbar from './Navbar'
-import CharacterPanel from './CharacterPanel'
+import LabPanel from './LabPanel'
 import MenuBar from "./Menubar"
 import Playground from './Playground'
 import Split from 'split-grid'
@@ -11,6 +11,7 @@ import {defaultCharacter} from "./constants"
 
 function App() {
   const [currentPlayground, setCurrentPlayground] = createSignal(crypto.randomUUID())
+  const [characters, setCharacters] = createSignal([])
   const [character, setCharacter] = createSignal(defaultCharacter)
   const [gridRef, setGridRef] = createSignal();
 
@@ -34,12 +35,16 @@ function App() {
     setCharacter(character)
   }
 
+  const handleCreateNewCharacter = (character) => {
+    
+  }
+
   return (
     <div ref={setGridRef} class={styles.App}>
       <Navbar/>
       <div class={styles.main}>
-        <MenuBar selectedCharacter={character} onSelectCharacter={handleCharacterSelect}/>
-        <CharacterPanel character={character} onUpdateCharacter={handleCharacterUpdate}/>
+        <MenuBar characters={characters} onSelectCharacter={handleCharacterSelect} onCreateNewCharacter={handleCreateNewCharacter}/>
+        <LabPanel character={character} onUpdateCharacter={handleCharacterUpdate}/>
         <div class={styles.gutter_col_1}></div>
         <Playground character={character} playId={currentPlayground()} clearPlayground={(newid) => {
           setCurrentPlayground(newid)

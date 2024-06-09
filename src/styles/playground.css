@@ -193,6 +193,7 @@ body {
     background-color:#f1f1f1;
     padding: 0.3rem;
     border-radius: 3px;
+    user-select: none; 
 }
 .tag-name{
     font-size: 9px;

@@ -61,7 +61,7 @@
 .main {
   display: flex;
   flex-direction: row;
-  height: 90vh;
+  height: 100vh;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -81,6 +81,7 @@
 
 .profile{
   margin-top: 1rem;
+  user-select: none; 
 }
 .profileName {
   text-align: center;
@@ -110,18 +111,8 @@
   font-weight: bold;
 }
 
-
-
 .profileTraitsTitle {
   font-size: 12px;
   font-weight: bold;
   text-align: left;
-}
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
