@@ -6,8 +6,8 @@ import TextareaAutosize from "solid-textarea-autosize"
 import "./styles/playground.css";
 
 function Playground({ playId, clearPlayground, character }: { playId: string, clearPlayground : (id: string) => void, character:any }) {
-  const [baselineMessage, setBaselineMessage] = createSignal([])  
-  const [controlMessage, setControlMessage] = createSignal([])  
+  const [baselineMessage, setBaselineMessage] = createSignal({[character().id]: []});
+  const [controlMessage, setControlMessage] = createSignal({[character().id]: []});
   const [prompt, setPrompt] = createSignal('')
   const [broke, setBroke] = createSignal(false)
 
@@ -18,6 +18,11 @@ function Playground({ playId, clearPlayground, character }: { playId: string, cl
     handleResetPlayground()
     return "You have unsaved changes! Are you sure you want to leave?";
   };
+
+  createEffect(()=>{
+    console.log("CHARACTER CHANGE")
+    console.log(character().name)
+  })
 
   onMount(() => {
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -37,20 +42,32 @@ function Playground({ playId, clearPlayground, character }: { playId: string, cl
         }),
         }
     )
-    setBaselineMessage([])
-    setControlMessage([])
+    setBaselineMessage({
+      ...baselineMessage(),
+      [character().id]: []
+    })
+    setControlMessage({
+      ...controlMessage(),
+      [character().id]: []
+    })
     clearPlayground(crypto.randomUUID())
   }
 
-  const addMessage = (role: string, content: string, ctrls: Trait[]) => {
+  const addMessage = (role: string, content: string, traits: Trait[]) => {
     const msgToAdd : Message = {
         "role": role, 
         "content": role == 'user' ? content : '',
         "tokens": [],
-        controls: ctrls
+        traits
     }
-    setBaselineMessage([...baselineMessage(), msgToAdd])
-    setControlMessage([...controlMessage(), msgToAdd])
+    setBaselineMessage({
+      ...baselineMessage(),
+      [character().id]: !(character().id in baselineMessage()) ? [msgToAdd] : [...baselineMessage()[character().id], msgToAdd]
+    })
+    setControlMessage({
+      ...controlMessage(), 
+      [character().id]: !(character().id in controlMessage()) ? [msgToAdd] : [...controlMessage()[character().id], msgToAdd]
+    })
   }
 
 
@@ -61,25 +78,15 @@ const handleSubmit = async (inputPrompt: string, event : any = null) => {
     prompt = event.target.value.trim()
     event.target.value = ''
   }
-  console.log(prompt, event)
   textarea.style.height = '19px';
   setPrompt('')
-  addMessage("user", prompt, character)
-  addMessage("assistant", "", character)
+  const traits : Trait[] = Object.values(character().traits)
+  addMessage("user", prompt, traits)
+  addMessage("assistant", "", traits)
   if (prompt != null) {
     try {
-      const [baselineResponse, controlResponse] = await Promise.all([
-            fetch(`${import.meta.env.VITE_ENDPOINT}/chat`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                playId,
-                prompt,
-                type: 'baseline',
-                character: null,
-              }),
-            }),
-            fetch(`${import.meta.env.VITE_ENDPOINT}/chat`, {
+      const [controlResponse, baselineResponse] = await Promise.all([
+          fetch(`${import.meta.env.VITE_ENDPOINT}/chat`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -88,7 +95,17 @@ const handleSubmit = async (inputPrompt: string, event : any = null) => {
                 type: 'control',
                 character: character(),
               }),
-          })
+          }),
+          fetch(`${import.meta.env.VITE_ENDPOINT}/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              playId,
+              prompt,
+              type: 'baseline',
+              character: character(),
+            }),
+          }),
       ]);
 
       const baselineReader = baselineResponse?.body?.getReader();
@@ -111,48 +128,47 @@ const handleSubmit = async (inputPrompt: string, event : any = null) => {
         const chunks = decodedValue.split("\n");
         for (const chunk of chunks) {
           const tokenObj = parseToken(chunk);
-          const msg = messages()
+          const msg = messages()[character().id]
           if (tokenObj !== null) {
             if (tokenObj.error) {
               const errorMsg = {
                 role: "error",
                 content: parseErrorMsg(tokenObj.error),
                 tokens: [],
-                controls: []
+                traits: []
               }
-              setter([...msg.slice(0, -1), errorMsg])
+              setter({...messages(), [character().id] : [...msg.slice(0, -1), errorMsg]})
               setBroke(true)
               console.log(errorMsg)
               return;
             }
            // console.log(messages());
               const newMsg = {
-              role: "assistant",
-              content: "",
-              tokens: [...msg[msg.length-1].tokens, {text: tokenObj.data, corrs: []}],
-              controls: ctrls
+                role: "assistant",
+                content: "",
+                tokens: [...msg[msg.length-1].tokens, {text: tokenObj.data, corrs: []}],
+                traits
               }
-              setter([...msg.slice(0, -1), newMsg]) 
+              setter({...messages(), [character().id] : [...msg.slice(0, -1), newMsg]}) 
           }
         }
         await readStream(reader, messages, setter);
       }
       await Promise.all([
-        readStream(baselineReader, baselineMessage, setBaselineMessage),
         readStream(controlReader, controlMessage, setControlMessage),
+        readStream(baselineReader, baselineMessage, setBaselineMessage),
       ]);
     } catch (error) {
-      
       console.log("ERROR")
       console.error("Error streaming response:", error);
       const errorMsg = {
         role: "system",
         content: "Error",
         tokens: [],
-        ctrls: []
+        traits: []
       }
-      setBaselineMessage([...baselineMessage(), errorMsg])
-      setControlMessage([...controlMessage(), errorMsg])
+      setControlMessage({...controlMessage(), [character().id]: [...controlMessage()[character().id], errorMsg]})
+      setBaselineMessage({...baselineMessage(), [character().id]: [...baselineMessage()[character().id], errorMsg]})
       setBroke(true)
     } finally {
     }
@@ -163,7 +179,8 @@ const handleSubmit = async (inputPrompt: string, event : any = null) => {
   const [rightShrunk, setRightShrunk] = createSignal(false); // Add state for right Chat collapsed status
   const [chatRef, setChatRef] = createSignal(null)
 
-  createEffect(() => {console.log(chatRef().getBoundingClientRect())})
+  //createEffect(() => {console.log(chatRef().getBoundingClientRect())})
+  console.log(controlMessage())
 
   return (
     <div class="playground-container">
@@ -174,8 +191,8 @@ const handleSubmit = async (inputPrompt: string, event : any = null) => {
         </div>
       </div>
       <div class="chats-container"  ref={setChatRef}>
-        <Chat character={character} type={'baseline'} messages={baselineMessage} onShrunk={(b)=>setLeftShrunk(b)} setRef={setChatRef}/>
         <Chat character={character} type={'control'} messages={controlMessage} onShrunk={(b)=>setRightShrunk(b)} setRef={setChatRef}/>
+        <Chat character={character} type={'baseline'} messages={baselineMessage} onShrunk={(b)=>setLeftShrunk(b)} setRef={setChatRef}/>
       </div>
       <div class="message-send" style={{width: leftShrunk() && rightShrunk() ? `${chatRef().getBoundingClientRect().width*2-1.5}px` : null}}>
         <div class="message-send-container">

@@ -41,10 +41,14 @@
 
 .menu-title{
     margin: 0.5rem;
-    margin-top: 1.5rem;
+    margin-top: 1rem;
     font-size: 13px;
     font-weight: bold;
     text-align: justify;
+}
+
+.menu-characters{
+    overflow-y: auto;
 }
 
 .menu-characters-addbutton {

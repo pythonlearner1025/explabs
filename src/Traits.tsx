@@ -47,6 +47,9 @@ function Traits({ character, onUpdateCharacter }:
                     );
                 })}
             </div>
+                <div class="traits-note">
+                    WARNING: Combining multiple traits together is experimental and may cause unexpected behavior.
+                </div>
         </div>
     ); 
 }

@@ -13,6 +13,8 @@ export interface Character {
     name: string
     bio: string
     traits: Record<string, Trait>
+    selected: boolean
+    id: string
 }
 
 export interface Token {
@@ -24,5 +26,5 @@ export interface Message {
     role: string
     content: string
     tokens: Token[]
-    controls: Trait[]
+    traits: Trait[]
 }

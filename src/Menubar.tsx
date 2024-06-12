@@ -1,25 +1,21 @@
 import './styles/menu.css';
-import logo from './assets/favicon.ico';
-import {defaultCharacter} from "./constants.ts"
-import {createSignal, createEffect, onCleanup} from "solid-js"
-import profile from "./assets/profile.jpeg"
+import {createSignal, createEffect, onCleanup, onMount} from "solid-js"
 import prof1 from "./assets/prof1.jpeg";
 import prof2 from "./assets/prof2.jpeg";
 import prof3 from "./assets/prof3.jpeg";
 import question from "./assets/question.png"
 
+
 function CharacterPreview({character, onSelectCharacter}) {
-    const [selected, setSelected] = createSignal(false)
     return (
         <div class="characterPreview">
             <div class="characterPreview-container" onClick={()=>{
-                onSelectCharacter(defaultCharacter)
-                setSelected(selected() ? false : true)
+                onSelectCharacter(character)
             }}
-                style={{background: selected() == true ? "#f0f0f0" : '#fffff'}}
+                style={{background: character.selected ? "#f0f0f0" : '#ffffff'}}
             >
-                <img src={profile} class="characterPreview-profile"/>
-                <div class="characterPreview-name">{defaultCharacter.name}</div>
+                <img src={character.profile} class="characterPreview-profile"/>
+                <div class="characterPreview-name">{character.name}</div>
             </div>
         </div>
     )
@@ -34,7 +30,7 @@ function RandomPreview({onCreateNewCharacter}) {
     const startAnimation = () => {
         const valid = setInterval(() => {
             setCurrentIndex((prevIndex) => (prevIndex + 1) % profs().length);
-        }, 333); // 1000ms / 3fps ≈ 333ms
+        }, 135); // 1000ms / 3fps ≈ 333ms
         setInterValid(valid);
     };
 
@@ -70,23 +66,18 @@ function RandomPreview({onCreateNewCharacter}) {
 }
 
 function Menubar({characters, onSelectCharacter, onCreateNewCharacter}) {
-  //<img src={null} alt="Logo" className={styles.logo} />
   return (
     <div class="menu">
         <div class="menu-title">
            Characters 
         </div>
         <div class="menu-characters">
-            <CharacterPreview
-                character={null}
-                onSelectCharacter={onSelectCharacter}/>
-             <CharacterPreview
-                character={null}
-                onSelectCharacter={onSelectCharacter}/>
             {characters().map(character => {
-                <CharacterPreview 
-                character={character} 
-                onSelectCharacter={onSelectCharacter}/>
+                return(
+                    <CharacterPreview 
+                    character={character} 
+                    onSelectCharacter={onSelectCharacter}/>
+                )
             })}
             <RandomPreview onCreateNewCharacter={onCreateNewCharacter}/>
         </div>

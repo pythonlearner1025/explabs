@@ -17,9 +17,9 @@
     margin-top: 0.3rem;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    height: 100%;
     user-select: none; 
+    height: 100%;
+    overflow-y: auto;
 }
 
 .traits-container {
@@ -50,3 +50,15 @@
     flex-direction: row;
     align-items: center;
 }
+
+.traits-note {
+    display: flex;
+    flex-direction: row;
+}
+
+.traits-note {
+    font-size: 10px;
+    font-style: italic;
+    text-align: left;
+}
+
