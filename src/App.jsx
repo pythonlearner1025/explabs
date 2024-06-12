@@ -1,20 +1,36 @@
 import styles from './styles/App.module.css';
 import Navbar from './Navbar'
-import LeftPanel from './LeftPanel'
-import RightPanel from './RightPanel'
+import LabPanel from './LabPanel'
+import MenuBar from "./Menubar"
 import Playground from './Playground'
 import Split from 'split-grid'
 import { onMount, createSignal } from 'solid-js';
-import {defaultControlInput} from "./constants"
+import {
+  tintinCharacter, 
+  paulCharacter, 
+  elonCharacter, 
+  blankCharacter, 
+  ninaCharacter,
+  emptyProfile}
+ from "./constants"
 
 // default vectors for 
 
+function generateNewProfile(character) {
+  return ''
+} 
+
 function App() {
   const [currentPlayground, setCurrentPlayground] = createSignal(crypto.randomUUID())
-  const [ctrlInput, setCtrlInput] = createSignal(defaultControlInput)
+  const [characters, setCharacters] = createSignal([tintinCharacter, elonCharacter, ninaCharacter, paulCharacter])
+  const [selectedCharacter, setSelectedCharacter] = createSignal(tintinCharacter)
   const [gridRef, setGridRef] = createSignal();
 
   onMount(() => {
+    console.log(characters())
+    characters().map(char => {
+      console.log(char.id)
+    })
     Split({
       columnGutters: [{
         track: 1,
@@ -25,20 +41,46 @@ function App() {
       }]
     });
   });
+  const handleNewProfile = (character) => {
+    const newCharacter = {...character, profile: generateNewProfile(character)}
+    const updatedCharacters = characters().map(char => 
+      char.id === character.id ? newCharacter : char
+    );
+    setCharacters(updatedCharacters);
+    setSelectedCharacter(newCharacter);
+  }
 
-  const handleVectorUpdate = (newvec) => {
-    setCtrlInput({
-      vectors: {...ctrlInput().vectors, [newvec.name]: newvec}
-    })
+  const handleCharacterUpdate = (character) => {
+    const updatedCharacters = characters().map(char => 
+      char.id === character.id ? character : char
+    );
+    setCharacters(updatedCharacters);
+    setSelectedCharacter(character)
+  }
+
+  const handleCharacterSelect = (character) => {
+    const updatedCharacters = characters().map(char => ({
+      ...char,
+      selected: char === character
+    }));
+    setCharacters(updatedCharacters);
+    setSelectedCharacter(character);
+  }
+
+  const handleCreateNewCharacter = () => {
+    const newBlankCharacter = {...blankCharacter, id: crypto.randomUUID()};
+    setCharacters([...characters(), newBlankCharacter]);
+    handleCharacterSelect(newBlankCharacter);
   }
 
   return (
     <div ref={setGridRef} class={styles.App}>
       <Navbar/>
       <div class={styles.main}>
-        <LeftPanel ctrlInput={ctrlInput} onUpdateVector={handleVectorUpdate}/>
+        <MenuBar characters={characters} onSelectCharacter={handleCharacterSelect} onCreateNewCharacter={handleCreateNewCharacter}/>
+        <LabPanel character={selectedCharacter} onUpdateCharacter={handleCharacterUpdate} onNewProfile={handleNewProfile}/>
         <div class={styles.gutter_col_1}></div>
-        <Playground ctrlInput={ctrlInput} playId={currentPlayground()} clearPlayground={(newid) => {
+        <Playground character={selectedCharacter} playId={currentPlayground()} clearPlayground={(newid) => {
           setCurrentPlayground(newid)
         }}/>
         <div class={styles.gutter_col_2}></div>

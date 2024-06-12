@@ -24,8 +24,6 @@
 }
 
 .navbar {
-  height: 7vh;
-  border-bottom: 1px solid black;
   display: flex;
   align-items: center;
   flex-direction: row;
@@ -54,16 +52,14 @@
 .leftpanel {
   flex: 1.5; /* 20% */
   margin-left: 1rem;
-  margin-top: 1.5rem;
+  margin-top: 1rem;
+  overflow-y: auto;
 }
-.rightpanel {
-  flex: 1; /* 20% */
-  margin: 1.5rem;
-}
+
 .main {
   display: flex;
   flex-direction: row;
-  height: 90vh;
+  height: 100vh;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -81,11 +77,82 @@
   font-weight: bold;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.profile{
+  margin-top: 1rem;
+  user-select: none; 
+  text-align: center;
+}
+.profileName {
+  text-align: center;
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  border: none;
+  background-color: white;
+  resize: none;
+  outline: none;
+}
+
+.profileBioContent {
+  font-size: 12px;
+  border: none;
+  background-color: white;
+  resize: none;
+  outline: none;
+}
+.profileBio{
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.profileBioTitle {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.profileTraitsTitle {
+  font-size: 12px;
+  font-weight: bold;
+  text-align: left;
+}
+
+.profilePic {
+  position: relative;
+  cursor: pointer;
+}
+
+.profilePic:hover .defaultImg {
+  opacity: 0.5;
+  visibility: visible;
+}
+
+.defaultImg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.1s ease;
+  z-index: 2;
+}
+
+.hoverText {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgb(255, 255, 255);
+  font-size: 12px;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 1;
+}
+
+.profilePic:hover .hoverText {
+  opacity: 1;
+  visibility: visible;
 }

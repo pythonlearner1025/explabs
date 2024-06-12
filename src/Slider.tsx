@@ -1,20 +1,22 @@
 import { Signal, createSignal, createEffect, onCleanup, onMount } from "solid-js";
 import "./styles/slider.css";
-import { Vector } from "./types";
+import { Trait } from "./types";
 
 const maxCoeff = 1.0;
 const scrollSpeed = 0.1; // Adjust this value to increase/decrease scroll sensitivity
 
-const Slider = ({ vector, onChangeVectorCoeff }: { vector: Vector, onChangeVectorCoeff: (vector: Vector, coeff: number) => void }) => {
+const Slider = ({ trait, onChangeTraitCoeff }: { trait: Trait, onChangeTraitCoeff: (trait: Trait, coeff: number) => void }) => {
   const [sliderRef, setSliderRef] = createSignal(null)
-  const [coeff, setCoeff] = createSignal(vector.coeff);
+  const [coeff, setCoeff] = createSignal(trait.coeff);
   const [isDragging, setIsDragging] = createSignal(false);
   const [startX, setStartX] = createSignal(0);
   const [rect, setRect] = createSignal(null);
 
   onMount(() => {
     setRect(sliderRef().getBoundingClientRect())
-    window.addEventListener('resize', ()=> {setRect(sliderRef().getBoundingClientRect())});
+    window.addEventListener('resize', ()=> {
+      setRect(sliderRef().getBoundingClientRect())
+    });
   });
 
   const handleScroll = (event: WheelEvent) => {
@@ -22,18 +24,17 @@ const Slider = ({ vector, onChangeVectorCoeff }: { vector: Vector, onChangeVecto
     const delta = event.deltaY > 0 ? -scrollSpeed : scrollSpeed;
     setCoeff((prev) => {
       const newCoeff = Math.min(Math.max(prev + delta, 0), maxCoeff);
-      onChangeVectorCoeff(vector, newCoeff);
+      onChangeTraitCoeff(trait, newCoeff);
       return newCoeff;
     });
   };
 
   const handleMouseDown = (event: MouseEvent) => {
     if (rect()) {
-      //console.log(rect())
       const clickX = event.clientX - rect().left;
       const newCoeff = Math.min(Math.max(clickX / rect().width, 0), maxCoeff);
       setCoeff(newCoeff);
-      onChangeVectorCoeff(vector, newCoeff);
+      onChangeTraitCoeff(trait, newCoeff);
     }
     setIsDragging(true);
     setStartX(event.clientX);
@@ -48,15 +49,13 @@ const Slider = ({ vector, onChangeVectorCoeff }: { vector: Vector, onChangeVecto
       return;
     }
     const dx =  mouseX - startX();
-    //console.log(dx)
     var newCoeff = coeff() + dx/rect().width;
     setStartX(mouseX);
     setCoeff(Math.min(Math.max(newCoeff, 0), maxCoeff));
-    onChangeVectorCoeff(vector, newCoeff);
+    onChangeTraitCoeff(trait, newCoeff);
   };
 
   const handleMouseUp = () => {
-    //console.log("called")
     setIsDragging(false);
     window.removeEventListener("mousemove", handleMouseMove);
     window.removeEventListener("mouseup", handleMouseUp);
@@ -67,7 +66,7 @@ const Slider = ({ vector, onChangeVectorCoeff }: { vector: Vector, onChangeVecto
       const clickX = event.clientX - rect().left;
       const newCoeff = Math.min(Math.max(clickX / rect().width, 0), maxCoeff);
       setCoeff(newCoeff);
-      onChangeVectorCoeff(vector, newCoeff);
+      onChangeTraitCoeff(trait, newCoeff);
     }
   };
 
@@ -78,24 +77,77 @@ const Slider = ({ vector, onChangeVectorCoeff }: { vector: Vector, onChangeVecto
     return [r, g, b];
   }
   
-  function computeColor(hexColor: string, coeff: number): string {
+  function computeColor(hexColor: string, idx: number): string {
+    const total = Math.floor(1 / scrollSpeed);
+    const scale = idx / total;
     const rgb = hexToRgb(hexColor);
     const [r, g, b] = rgb;
-    const scaledR = Math.round(r);
-    const scaledG = Math.round(g);
-    const scaledB = Math.round(b);
-    return `rgba(${scaledR}, ${scaledG}, ${scaledB}, ${coeff})`;
+  
+    let scaledR = r;
+    let scaledG = g;
+    let scaledB = b;
+  
+    if (r === g && g === b) {
+      // If all colors have the same value, scale by alpha only
+      return `rgba(${r}, ${g}, ${b}, ${scale + 0.35})`;
+    } else {
+      // Find the dominant and least dominant color directions
+      const maxColor = Math.max(r, g, b);
+      const minColor = Math.min(r, g, b);
+      const dominantColor = maxColor === r ? 'r' : maxColor === g ? 'g' : 'b';
+      const leastDominantColor = minColor === r ? 'r' : minColor === g ? 'g' : 'b';
+  
+      // Scale the dominant color towards 255 and the least dominant color towards 0
+      if (dominantColor === 'r') {
+        scaledR = Math.round(r + (255 - r) * scale);
+      } else if (dominantColor === 'g') {
+        scaledG = Math.round(g + (255 - g) * scale);
+      } else {
+        scaledB = Math.round(b + (255 - b) * scale);
+      }
+  
+      if (leastDominantColor === 'r') {
+        scaledR = Math.round(r - r * scale);
+      } else if (leastDominantColor === 'g') {
+        scaledG = Math.round(g - g * scale);
+      } else {
+        scaledB = Math.round(b - b * scale);
+      }
+    }
+  
+    return `rgba(${scaledR}, ${scaledG}, ${scaledB}, ${scale + 0.35})`;
   }
 
+  function unitWidth() {
+    if (!rect()) return 0;
+    const divRem = 0.15
+    const total = Math.floor(1/scrollSpeed)
+    const unitWidth = (rect().width / 16 - divRem * (total - 1)) / total;
+    return unitWidth
+  }
+
+  function calcWidth(i) {
+    if (!rect()) return 0;
+    const total = Math.floor(1 / scrollSpeed);
+    const divRem = 0.15; // 2px / 16px (assuming default root font size is 16px)
+    const unitWidth = (rect().width / 16 - divRem * (total - 1)) / total;
+    const currWidth = coeff() * rect().width / 16;
+    const currX = (i * divRem) + unitWidth * i;
+    if (coeff() > 0) {
+      const w = currWidth - currX > 0 ? Math.min(currWidth - currX, unitWidth) : 0;
+      return w;
+    }
+    return 0;
+  }
   return (
     <div class="slider">
       <div class="slider-container">
         <div class="slider-header">
           <div class="slider-header-desc">
-          {vector.desc}
+          {trait.desc}
           </div>
           <div class="slider-header-name">
-           {vector.name}
+           {trait.name}
           </div>
         </div>
           <div class="slider-container-inner">
@@ -106,13 +158,27 @@ const Slider = ({ vector, onChangeVectorCoeff }: { vector: Vector, onChangeVecto
               onMouseDown={handleMouseDown}
               onClick={handleClick}
               style={{
-                background: `linear-gradient(to right, ${computeColor(vector.color, coeff() / maxCoeff)} 0%, ${computeColor(vector.color, coeff() / maxCoeff)} ${(coeff() / maxCoeff) * 100}%, #eee ${(coeff() / maxCoeff) * 100}%, #eee 100%)`,
-
+                background: `#eee`,
               }}
             >
-              <div class="slider-dividers">
-                {Array.from({ length: Math.floor(1 / scrollSpeed)+1}, (_, i) => (
-                  <div class="slider-divider" />
+               <div class="slider-overlay">
+                {Array.from({ length: Math.floor(1 / scrollSpeed)}, (_, i) => (
+                  <>
+                    <div class="slider-overlay-bar-1" style={{width: `${unitWidth()}rem`}} />
+                  {i!=Math.floor(1/scrollSpeed)-1 && 
+                    <div class="slider-divider" />
+                    }
+                  </>
+                ))}
+              </div>
+              <div class="slider-overlay">
+                {Array.from({ length: Math.floor(1 / scrollSpeed)}, (_, i) => (
+                  <>
+                    <div class="slider-overlay-bar-2" style={{width: `${calcWidth(i)}rem`, background: computeColor(trait.color, i)}} />
+                    {i!=Math.floor(1/scrollSpeed)-1 && 
+                    <div class="slider-divider-invisible" />
+                    }
+                  </>
                 ))}
               </div>
             </div>
