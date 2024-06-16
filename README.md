@@ -1,5 +1,5 @@
 # TODO
-- datatypes 
-- leftpane;: vector library
-- rightpanel: model control
-- notebook: cells + metadata (title, date, history trace)
+frontend
+- basic markdown support for chat
+- better design taste overall. we're making fucking art here
+- dark mode
