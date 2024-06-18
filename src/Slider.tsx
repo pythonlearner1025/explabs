@@ -1,5 +1,5 @@
 import { Signal, createSignal, createEffect, onCleanup, onMount } from "solid-js";
-import "./styles/slider.css";
+// import "./styles/slider.css";
 import { Trait } from "./types";
 
 const maxCoeff = 1.0;
@@ -14,7 +14,7 @@ const Slider = ({ trait, onChangeTraitCoeff }: { trait: Trait, onChangeTraitCoef
 
   onMount(() => {
     setRect(sliderRef().getBoundingClientRect())
-    window.addEventListener('resize', ()=> {
+    window.addEventListener('resize', () => {
       setRect(sliderRef().getBoundingClientRect())
     });
   });
@@ -48,8 +48,8 @@ const Slider = ({ trait, onChangeTraitCoeff }: { trait: Trait, onChangeTraitCoef
     if ((mouseX < rect().x && coeff() <= 0) || (mouseX > rect().x + rect().width && coeff() >= maxCoeff)) {
       return;
     }
-    const dx =  mouseX - startX();
-    var newCoeff = coeff() + dx/rect().width;
+    const dx = mouseX - startX();
+    var newCoeff = coeff() + dx / rect().width;
     setStartX(mouseX);
     setCoeff(Math.min(Math.max(newCoeff, 0), maxCoeff));
     onChangeTraitCoeff(trait, newCoeff);
@@ -76,17 +76,17 @@ const Slider = ({ trait, onChangeTraitCoeff }: { trait: Trait, onChangeTraitCoef
     const b = parseInt(hex.slice(5, 7), 16);
     return [r, g, b];
   }
-  
+
   function computeColor(hexColor: string, idx: number): string {
     const total = Math.floor(1 / scrollSpeed);
     const scale = idx / total;
     const rgb = hexToRgb(hexColor);
     const [r, g, b] = rgb;
-  
+
     let scaledR = r;
     let scaledG = g;
     let scaledB = b;
-  
+
     if (r === g && g === b) {
       // If all colors have the same value, scale by alpha only
       return `rgba(${r}, ${g}, ${b}, ${scale + 0.35})`;
@@ -96,7 +96,7 @@ const Slider = ({ trait, onChangeTraitCoeff }: { trait: Trait, onChangeTraitCoef
       const minColor = Math.min(r, g, b);
       const dominantColor = maxColor === r ? 'r' : maxColor === g ? 'g' : 'b';
       const leastDominantColor = minColor === r ? 'r' : minColor === g ? 'g' : 'b';
-  
+
       // Scale the dominant color towards 255 and the least dominant color towards 0
       if (dominantColor === 'r') {
         scaledR = Math.round(r + (255 - r) * scale);
@@ -105,7 +105,7 @@ const Slider = ({ trait, onChangeTraitCoeff }: { trait: Trait, onChangeTraitCoef
       } else {
         scaledB = Math.round(b + (255 - b) * scale);
       }
-  
+
       if (leastDominantColor === 'r') {
         scaledR = Math.round(r - r * scale);
       } else if (leastDominantColor === 'g') {
@@ -114,14 +114,14 @@ const Slider = ({ trait, onChangeTraitCoeff }: { trait: Trait, onChangeTraitCoef
         scaledB = Math.round(b - b * scale);
       }
     }
-  
+
     return `rgba(${scaledR}, ${scaledG}, ${scaledB}, ${scale + 0.35})`;
   }
 
   function unitWidth() {
     if (!rect()) return 0;
     const divRem = 0.15
-    const total = Math.floor(1/scrollSpeed)
+    const total = Math.floor(1 / scrollSpeed)
     const unitWidth = (rect().width / 16 - divRem * (total - 1)) / total;
     return unitWidth
   }
@@ -140,51 +140,54 @@ const Slider = ({ trait, onChangeTraitCoeff }: { trait: Trait, onChangeTraitCoef
     return 0;
   }
   return (
-    <div class="slider">
-      <div class="slider-container">
-        <div class="slider-header">
-          <div class="slider-header-desc">
-          {trait.desc}
+    <div class="w-full">
+      <div class="flex flex-col items-center mb-1 w-full">
+        <div class="text-left mt-2 text-xs self-start flex flex-row">
+          <div class="mr-0.5">
+            {trait.desc}
           </div>
-          <div class="slider-header-name">
-           {trait.name}
+          <div>
+            {trait.name}
           </div>
         </div>
-          <div class="slider-container-inner">
-            <div
-              class="slider-bar"
-              ref={setSliderRef}
-              onWheel={handleScroll}
-              onMouseDown={handleMouseDown}
-              onClick={handleClick}
-              style={{
-                background: `#eee`,
-              }}
-            >
-               <div class="slider-overlay">
-                {Array.from({ length: Math.floor(1 / scrollSpeed)}, (_, i) => (
-                  <>
-                    <div class="slider-overlay-bar-1" style={{width: `${unitWidth()}rem`}} />
-                  {i!=Math.floor(1/scrollSpeed)-1 && 
-                    <div class="slider-divider" />
-                    }
-                  </>
-                ))}
-              </div>
-              <div class="slider-overlay">
-                {Array.from({ length: Math.floor(1 / scrollSpeed)}, (_, i) => (
-                  <>
-                    <div class="slider-overlay-bar-2" style={{width: `${calcWidth(i)}rem`, background: computeColor(trait.color, i)}} />
-                    {i!=Math.floor(1/scrollSpeed)-1 && 
-                    <div class="slider-divider-invisible" />
-                    }
-                  </>
-                ))}
-              </div>
+        <div class="flex flex-row items-center w-full">
+          <div
+            class="mt-2 mb-2 flex-grow h-5 w-full relative bg-[#2f2727] cursor-pointer"
+            ref={setSliderRef}
+            onWheel={handleScroll}
+            onMouseDown={handleMouseDown}
+            onClick={handleClick}
+            style={{
+              background: `#eee`,
+            }}
+          >
+            <div class="absolute top-0 left-0 w-full h-full flex pointer-events-none z-1">
+              {Array.from({ length: Math.floor(1 / scrollSpeed) }, (_, i) => (
+                <>
+                  <div class="h-full bg-[#f0f0f0]" style={{ width: `${unitWidth()}rem` }} />
+                  {i !== Math.floor(1 / scrollSpeed) - 1 && (
+                    <div class="w-0.5 h-full bg-white" />
+                  )}
+                </>
+              ))}
             </div>
-            <div class="slider-value">
-              {(Math.min(Math.max(coeff(),0), 1.0)*100).toFixed(0)}%
+            <div class="absolute top-0 left-0 w-full h-full flex pointer-events-none z-2">
+              {Array.from({ length: Math.floor(1 / scrollSpeed) }, (_, i) => (
+                <>
+                  <div
+                    class="h-full"
+                    style={{ width: `${calcWidth(i)}rem`, background: computeColor(trait.color, i) }}
+                  />
+                  {i !== Math.floor(1 / scrollSpeed) - 1 && (
+                    <div class="w-0.5 h-full bg-transparent" />
+                  )}
+                </>
+              ))}
             </div>
+          </div>
+          <div class="rounded text-center text-xs w-1/5">
+            {(Math.min(Math.max(coeff(), 0), 1.0) * 100).toFixed(0)}%
+          </div>
         </div>
       </div>
     </div>

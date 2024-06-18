@@ -1,10 +1,10 @@
 import { Token, Trait } from "./types";
-import "./styles/playground.css";
 import { createEffect, createSignal, onMount, onCleanup } from "solid-js";
 import { SolidMarkdown } from "solid-markdown";
 import { Highlight, Language } from "solid-highlight";
 import ResizeInIcon from "./assets/resize-in.svg";
 import ResizeOutIcon from "./assets/resize-out.svg";
+// import "./styles/playground.css";
 
 // TODO: allow code syntax highlighting
 // https://github.com/aidanaden/solid-highlight?tab=readme-ov-file
@@ -49,7 +49,7 @@ function Chat({ character, type, messages, onShrunk, setRef }) {
                 chatContainer.scrollHeight - chatContainer.clientHeight <=
                 chatContainer.scrollTop + parseInt(getComputedStyle(msgRef).fontSize);
             //  console.log(chatContainer.scrollHeight, chatContainer.clientHeight, chatContainer.scrollTop,  parseInt(getComputedStyle(msgRef).fontSize), isScrolledToBottom)
-            if (isScrolledToBottom  != autoScroll()) setAutoScroll(isScrolledToBottom);
+            if (isScrolledToBottom != autoScroll()) setAutoScroll(isScrolledToBottom);
         }
     };
 
@@ -60,7 +60,7 @@ function Chat({ character, type, messages, onShrunk, setRef }) {
         }
     });
 
-    createEffect(()=>{
+    createEffect(() => {
         shrink()
         console.log(chatOuterRef())
         setRef(chatOuterRef())
@@ -68,44 +68,45 @@ function Chat({ character, type, messages, onShrunk, setRef }) {
 
     const [shrink, setShrink] = createSignal(false)
     return (
-     <div class={type === 'baseline' ? 'chat-baseline' : 'chat-control'} 
-     style={{ 'width': shrink() ? '5%': '100%'}}
-     ref={setChatOuterRef}
-     >
-        <div class="chat-header">
-            { type=='baseline' && <div class="chat-collapse" onClick={()=>{
-                onShrunk(shrink() ? false : true)
-                setShrink(shrink() ? false : true)}
+        <div class={type === 'baseline' ? 'chat-baseline' : 'chat-control'}
+            style={{ 'width': shrink() ? '5%' : '100%' }}
+            ref={setChatOuterRef}
+        >
+            <div class="chat-header">
+                {type == 'baseline' && <div class="chat-collapse" onClick={() => {
+                    onShrunk(shrink() ? false : true)
+                    setShrink(shrink() ? false : true)
+                }
                 }>
-                <div class="chat-collapse-tag">{shrink() ? <img src={ResizeOutIcon} alt="expand"/> : <img src={ResizeInIcon} alt="shrink"/>}</div>
+                    <div class="chat-collapse-tag">{shrink() ? <img src={ResizeOutIcon} alt="expand" /> : <img src={ResizeInIcon} alt="shrink" />}</div>
+                </div>
+                }
+                {!shrink() && <div class="chat-header-text">{type === 'baseline' ? "Normal" : "Experimental"}</div>}
             </div>
-            }
-            {!shrink() && <div class="chat-header-text">{type === 'baseline' ? "Normal" : "Experimental"}</div>}
-        </div>
-        <div ref={setChatInnerRef} onWheel={handleScroll} class={type === 'baseline' ? 'chat-baseline-inner' : 'chat-control-inner'}>
-            {!shrink() && character().id in messages() && messages()[character().id].map(message => {
-                return (
-                    <div class="message">
-                        {message.role === "error" ? (
-                            <div>
-                                <div class="message-role">AI</div>
-                                <div class="error-content">{message.content}</div>
-                            </div>
-                        ) : (
-                            <div>
-                                <div class="message-role">{message.role == "assistant" ? character().name : "You"}</div>
-                                {type === 'control' && message.role == 'assistant' ? traitsTag(message.traits): <div></div>}
-                                <div ref={msgRef} class="message-content">{message.role === "user" 
-                                ? message.content 
-                                : constructMessage(message.tokens)}
+            <div ref={setChatInnerRef} onWheel={handleScroll} class={type === 'baseline' ? 'chat-baseline-inner' : 'chat-control-inner'}>
+                {!shrink() && character().id in messages() && messages()[character().id].map(message => {
+                    return (
+                        <div class="message">
+                            {message.role === "error" ? (
+                                <div>
+                                    <div class="message-role">AI</div>
+                                    <div class="error-content">{message.content}</div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                );
-            })}
+                            ) : (
+                                <div>
+                                    <div class="message-role">{message.role == "assistant" ? character().name : "You"}</div>
+                                    {type === 'control' && message.role == 'assistant' ? traitsTag(message.traits) : <div></div>}
+                                    <div ref={msgRef} class="message-content">{message.role === "user"
+                                        ? message.content
+                                        : constructMessage(message.tokens)}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
         </div>
-     </div>
     );
 }
 
