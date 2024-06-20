@@ -4,6 +4,7 @@ import { Message, Trait } from "./types.ts";
 import {parseToken, parseErrorMsg, LLMToken} from "./utils"
 import TextareaAutosize from "solid-textarea-autosize"
 import "./styles/playground.css";
+import runpodSdk from "runpod-sdk";
 
 function Playground({ playId, clearPlayground, character }: { playId: string, clearPlayground : (id: string) => void, character:any }) {
   const [baselineMessage, setBaselineMessage] = createSignal({[character().id]: []});
@@ -85,23 +86,20 @@ function Playground({ playId, clearPlayground, character }: { playId: string, cl
     addMessage("assistant", "", traits)
     if (prompt != null) {
       try {
-        const [controlResponse, baselineResponse] = await Promise.all(["control", "baseline"].map((chatType) =>
-          fetch(`${import.meta.env.VITE_ENDPOINT}`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              'Authorization': `Bearer ${import.meta.env.VITE_RUNPOD_API_KEY}`
-            },
-            body: JSON.stringify({
+
+          const runpod = runpodSdk(import.meta.env.VITE_RUNPOD_API_KEY);
+          const endpoint = runpod.endpoint(import.meta.env.VITE_RUNPOD_ENDPOINT);
+          const jobResponse = await endpoint.run({
               input: {
                 playId,
                 prompt,
                 character: character(),
-                type: chatType
+                type: "control"
               }
-            }),
-          })
-        ))
+          });
+          for await (const result of endpoint.stream(jobResponse.id)) {
+              console.log(`${JSON.stringify(result, null, 2)}`);
+          }
 
         async function showLLMOutput(response: Response, messages: object, setter: Function): Promise<void> {
           const parsedControlResponse: LLMToken[] = (await response.json()).output.map(parseToken).filter(Boolean);
