@@ -6,6 +6,9 @@ import TextareaAutosize from "solid-textarea-autosize"
 import "./styles/playground.css";
 import runpodSdk from "runpod-sdk";
 
+const runpod = runpodSdk(import.meta.env.VITE_RUNPOD_API_KEY);
+const rundpodServerlessEndpoint = runpod.endpoint(import.meta.env.VITE_RUNPOD_ENDPOINT_ID);
+
 function Playground({ playId, clearPlayground, character }: { playId: string, clearPlayground : (id: string) => void, character:any }) {
   const [baselineMessage, setBaselineMessage] = createSignal({[character().id]: []});
   const [controlMessage, setControlMessage] = createSignal({[character().id]: []});
@@ -56,7 +59,7 @@ function Playground({ playId, clearPlayground, character }: { playId: string, cl
 
   const addMessage = (role: string, content: string, traits: Trait[]) => {
     const msgToAdd : Message = {
-        "role": role, 
+        "role": role,
         "content": role == 'user' ? content : '',
         "tokens": [],
         traits
@@ -66,7 +69,7 @@ function Playground({ playId, clearPlayground, character }: { playId: string, cl
       [character().id]: !(character().id in baselineMessage()) ? [msgToAdd] : [...baselineMessage()[character().id], msgToAdd]
     })
     setControlMessage({
-      ...controlMessage(), 
+      ...controlMessage(),
       [character().id]: !(character().id in controlMessage()) ? [msgToAdd] : [...controlMessage()[character().id], msgToAdd]
     })
   }
@@ -86,42 +89,49 @@ function Playground({ playId, clearPlayground, character }: { playId: string, cl
     addMessage("assistant", "", traits)
     if (prompt != null) {
       try {
+          console.log("endpoint is", rundpodServerlessEndpoint)
 
-          const runpod = runpodSdk(import.meta.env.VITE_RUNPOD_API_KEY);
-          const endpoint = runpod.endpoint(import.meta.env.VITE_RUNPOD_ENDPOINT);
-          const jobResponse = await endpoint.run({
-              input: {
-                playId,
-                prompt,
-                character: character(),
-                type: "control"
+          async function updateLLMText(jobId, messages, setter) {
+              for await (const chunk of rundpodServerlessEndpoint.stream(jobId)) {
+                  const tokenObj = parseToken(chunk.output);
+                  const msg = messages()[character().id]
+                  if (tokenObj !== null) {
+                      if (tokenObj.error) {
+                          const errorMsg = {
+                              role: "error",
+                              content: parseErrorMsg(tokenObj.error),
+                              tokens: [],
+                              traits: []
+                          }
+                          setter({...messages(), [character().id]: [...msg.slice(0, -1), errorMsg]})
+                          setBroke(true)
+                          console.log(errorMsg)
+                          return;
+                      }
+                      const newMsg = {
+                          role: "assistant",
+                          content: "",
+                          tokens: [...msg[msg.length - 1].tokens, {text: tokenObj.data, corrs: []}],
+                          traits
+                      }
+                      setter({...messages(), [character().id]: [...msg.slice(0, -1), newMsg]})
+                  }
               }
-          });
-          for await (const result of endpoint.stream(jobResponse.id)) {
-              console.log(`${JSON.stringify(result, null, 2)}`);
           }
 
-        async function showLLMOutput(response: Response, messages: object, setter: Function): Promise<void> {
-          const parsedControlResponse: LLMToken[] = (await response.json()).output.map(parseToken).filter(Boolean);
-          const characterId = character().id
-
-          const newMsg = {
-            role: "assistant",
-            content: "",
-            tokens: parsedControlResponse.map(token => ({text: token.data, corrs: []})),
-            traits
-          }
-          setter({
-            ...messages,
-            [characterId]: [...messages[characterId], newMsg]
-          })
-        }
-
-        await Promise.all([
-          showLLMOutput(controlResponse, controlMessage(), setControlMessage),
-          showLLMOutput(baselineResponse, baselineMessage(), setBaselineMessage)
-        ])
-
+          await Promise.all([
+              ["control", controlMessage, setControlMessage],
+              ["baseline", baselineMessage, setBaselineMessage],
+          ].map(([chatType, messages, setter]) =>
+              rundpodServerlessEndpoint.run({
+                  input: {
+                    playId,
+                    prompt,
+                    character: character(),
+                    type: chatType
+                  }
+              }).then(({id}) => updateLLMText(id, messages, setter))
+          ))
       } catch (error) {
         console.log("ERROR")
         console.error("Error streaming response:", error);
