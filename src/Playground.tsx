@@ -1,7 +1,7 @@
 import { createSignal, createEffect, onMount, onCleanup } from "solid-js";
 import Chat from "./Chat";
 import { Message, Trait } from "./types.ts";
-import {parseToken, parseErrorMsg}  from "./utils"
+import {parseToken, parseErrorMsg, LLMToken} from "./utils"
 import TextareaAutosize from "solid-textarea-autosize"
 import "./styles/playground.css";
 
@@ -71,107 +71,73 @@ function Playground({ playId, clearPlayground, character }: { playId: string, cl
   }
 
 
-const handleSubmit = async (inputPrompt: string, event : any = null) => {
-  var prompt = inputPrompt
-  if (event) {
-    event.preventDefault()
-    prompt = event.target.value.trim()
-    event.target.value = ''
-  }
-  textarea.style.height = '19px';
-  setPrompt('')
-  const traits : Trait[] = Object.values(character().traits)
-  addMessage("user", prompt, traits)
-  addMessage("assistant", "", traits)
-  if (prompt != null) {
-    try {
-      const [controlResponse, baselineResponse] = await Promise.all([
-          fetch(`${import.meta.env.VITE_ENDPOINT}/chat`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
+  const handleSubmit = async (inputPrompt: string, event : any = null) => {
+    var prompt = inputPrompt
+    if (event) {
+      event.preventDefault()
+      prompt = event.target.value.trim()
+      event.target.value = ''
+    }
+    textarea.style.height = '19px';
+    setPrompt('')
+    const traits : Trait[] = Object.values(character().traits)
+    addMessage("user", prompt, traits)
+    addMessage("assistant", "", traits)
+    if (prompt != null) {
+      try {
+        const [controlResponse, baselineResponse] = await Promise.all(["control", "baseline"].map((chatType) =>
+          fetch(`${import.meta.env.VITE_ENDPOINT}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              'Authorization': `Bearer ${import.meta.env.VITE_RUNPOD_API_KEY}`
+            },
+            body: JSON.stringify({
+              input: {
                 playId,
                 prompt,
-                type: 'control',
                 character: character(),
-              }),
-          }),
-          fetch(`${import.meta.env.VITE_ENDPOINT}/chat`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              playId,
-              prompt,
-              type: 'baseline',
-              character: character(),
+                type: chatType
+              }
             }),
-          }),
-      ]);
+          })
+        ))
 
-      const baselineReader = baselineResponse?.body?.getReader();
-      const controlReader = controlResponse.body?.getReader();
-      const decoder = new TextDecoder("utf-8");
+        async function showLLMOutput(response: Response, messages: object, setter: Function): Promise<void> {
+          const parsedControlResponse: LLMToken[] = (await response.json()).output.map(parseToken).filter(Boolean);
+          const characterId = character().id
 
-      async function readStream(
-        reader: ReadableStreamDefaultReader<Uint8Array> | undefined,
-        messages: any,
-        setter: any
-      ) {
-        if (!reader) {
-          return;
-        }
-        const { done, value } = await reader.read();
-        if (done) {
-          return;
-        }
-        const decodedValue = decoder.decode(value, { stream: true });
-        const chunks = decodedValue.split("\n");
-        for (const chunk of chunks) {
-          const tokenObj = parseToken(chunk);
-          const msg = messages()[character().id]
-          if (tokenObj !== null) {
-            if (tokenObj.error) {
-              const errorMsg = {
-                role: "error",
-                content: parseErrorMsg(tokenObj.error),
-                tokens: [],
-                traits: []
-              }
-              setter({...messages(), [character().id] : [...msg.slice(0, -1), errorMsg]})
-              setBroke(true)
-              console.log(errorMsg)
-              return;
-            }
-           // console.log(messages());
-              const newMsg = {
-                role: "assistant",
-                content: "",
-                tokens: [...msg[msg.length-1].tokens, {text: tokenObj.data, corrs: []}],
-                traits
-              }
-              setter({...messages(), [character().id] : [...msg.slice(0, -1), newMsg]}) 
+          const newMsg = {
+            role: "assistant",
+            content: "",
+            tokens: parsedControlResponse.map(token => ({text: token.data, corrs: []})),
+            traits
           }
+          setter({
+            ...messages,
+            [characterId]: [...messages[characterId], newMsg]
+          })
         }
-        await readStream(reader, messages, setter);
+
+        await Promise.all([
+          showLLMOutput(controlResponse, controlMessage(), setControlMessage),
+          showLLMOutput(baselineResponse, baselineMessage(), setBaselineMessage)
+        ])
+
+      } catch (error) {
+        console.log("ERROR")
+        console.error("Error streaming response:", error);
+        const errorMsg = {
+          role: "system",
+          content: "Error",
+          tokens: [],
+          traits: []
+        }
+        setControlMessage({...controlMessage(), [character().id]: [...controlMessage()[character().id], errorMsg]})
+        setBaselineMessage({...baselineMessage(), [character().id]: [...baselineMessage()[character().id], errorMsg]})
+        setBroke(true)
+      } finally {
       }
-      await Promise.all([
-        readStream(controlReader, controlMessage, setControlMessage),
-        readStream(baselineReader, baselineMessage, setBaselineMessage),
-      ]);
-    } catch (error) {
-      console.log("ERROR")
-      console.error("Error streaming response:", error);
-      const errorMsg = {
-        role: "system",
-        content: "Error",
-        tokens: [],
-        traits: []
-      }
-      setControlMessage({...controlMessage(), [character().id]: [...controlMessage()[character().id], errorMsg]})
-      setBaselineMessage({...baselineMessage(), [character().id]: [...baselineMessage()[character().id], errorMsg]})
-      setBroke(true)
-    } finally {
-    }
     }
   };
 
