@@ -1,6 +1,6 @@
-import { createSignal, createEffect, onMount, onCleanup } from "solid-js";
+import {createSignal, createEffect, onMount, onCleanup, Accessor} from "solid-js";
 import Chat from "./Chat";
-import { Message, Trait } from "./types.ts";
+import {Character, Message, Trait} from "./types.ts";
 import {parseToken, parseErrorMsg, LLMToken} from "./utils"
 import TextareaAutosize from "solid-textarea-autosize"
 import "./styles/playground.css";
@@ -11,11 +11,30 @@ const rundpodServerlessEndpoint = runpod.endpoint(import.meta.env.VITE_RUNPOD_EN
 
 type MessagesState = {[characterId: string]: Message[]}
 
-function Playground({ playId, clearPlayground, character }: { playId: string, clearPlayground : (id: string) => void, character:any }) {
-  const [baselineMessage, setBaselineMessage] = createSignal<MessagesState>({[character().id]: []});
-  const [controlMessage, setControlMessage] = createSignal<MessagesState>({[character().id]: []});
+const CONTROL_MESSAGES_KEY = "vibegpt_control_messages"
+const BASELINE_MESSAGES_KEY = "vibegpt_baseline_messages"
+
+function Playground({ playId, clearPlayground, character }: { playId: string, clearPlayground : (id: string) => void, character: Accessor<Character> }) {
+  const [baselineMessage, setBaselineMessage] = createSignal<MessagesState>({ [character().id]: [] });
+  const [controlMessage, setControlMessage] = createSignal<MessagesState>({ [character().id]: [] });
   const [prompt, setPrompt] = createSignal('')
   const [broke, setBroke] = createSignal(false)
+
+    onMount(() => {
+        [[CONTROL_MESSAGES_KEY, setControlMessage], [BASELINE_MESSAGES_KEY, setBaselineMessage]].forEach(([key, setter]) => {
+            const localStorageMessages = JSON.parse(localStorage.getItem(`${key}_${character().name}`))
+            const messages = {[character().id]: localStorageMessages || []}
+            setter(messages)
+        })
+    });
+
+    createEffect(() => {
+        [[CONTROL_MESSAGES_KEY, controlMessage], [BASELINE_MESSAGES_KEY, baselineMessage]].forEach(([key, allMessages]) => {
+            const messages: Message[] = allMessages()[character().id]
+            if (messages.length > 0) {
+                localStorage.setItem(`${key}_${character().name}`, JSON.stringify(messages));
+            }
+    })});
 
   let textarea;
   const handleBeforeUnload = (event: any) => {
