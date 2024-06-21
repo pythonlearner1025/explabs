@@ -9,9 +9,11 @@ import runpodSdk from "runpod-sdk";
 const runpod = runpodSdk(import.meta.env.VITE_RUNPOD_API_KEY);
 const rundpodServerlessEndpoint = runpod.endpoint(import.meta.env.VITE_RUNPOD_ENDPOINT_ID);
 
+type MessagesState = {[characterId: string]: Message[]}
+
 function Playground({ playId, clearPlayground, character }: { playId: string, clearPlayground : (id: string) => void, character:any }) {
-  const [baselineMessage, setBaselineMessage] = createSignal({[character().id]: []});
-  const [controlMessage, setControlMessage] = createSignal({[character().id]: []});
+  const [baselineMessage, setBaselineMessage] = createSignal<MessagesState>({[character().id]: []});
+  const [controlMessage, setControlMessage] = createSignal<MessagesState>({[character().id]: []});
   const [prompt, setPrompt] = createSignal('')
   const [broke, setBroke] = createSignal(false)
 
@@ -108,7 +110,7 @@ function Playground({ playId, clearPlayground, character }: { playId: string, cl
                           console.log(errorMsg)
                           return;
                       }
-                      const newMsg = {
+                      const newMsg: Message = {
                           role: "assistant",
                           content: "",
                           tokens: [...msg[msg.length - 1].tokens, {text: tokenObj.data, corrs: []}],
@@ -128,7 +130,11 @@ function Playground({ playId, clearPlayground, character }: { playId: string, cl
                     playId,
                     prompt,
                     character: character(),
-                    type: chatType
+                    type: chatType,
+                    history: messages()[character().id].map(({role, tokens, content}) => ({
+                        text: (role == "assistant") ? tokens.map(({text}) => text).join("") : content,
+                        role
+                    })).slice(0, -1)
                   }
               }).then(({id}) => updateLLMText(id, messages, setter))
           ))
