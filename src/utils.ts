@@ -1,4 +1,6 @@
-export const parseToken = (chunk: string) => {
+export type LLMToken = { data: string, error: string | undefined }
+
+export const parseToken = (chunk: string): LLMToken | null  => {
     const trimmedChunk = chunk.trim();
 
     if (trimmedChunk === "") return null;

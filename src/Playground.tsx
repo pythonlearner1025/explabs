@@ -1,9 +1,13 @@
 import { createSignal, createEffect, onMount, onCleanup } from "solid-js";
 import Chat from "./Chat";
 import { Message, Trait } from "./types.ts";
-import {parseToken, parseErrorMsg}  from "./utils"
+import {parseToken, parseErrorMsg, LLMToken} from "./utils"
 import TextareaAutosize from "solid-textarea-autosize"
 import "./styles/playground.css";
+import runpodSdk from "runpod-sdk";
+
+const runpod = runpodSdk(import.meta.env.VITE_RUNPOD_API_KEY);
+const rundpodServerlessEndpoint = runpod.endpoint(import.meta.env.VITE_RUNPOD_ENDPOINT_ID);
 
 function Playground({ playId, clearPlayground, character }: { playId: string, clearPlayground : (id: string) => void, character:any }) {
   const [baselineMessage, setBaselineMessage] = createSignal({[character().id]: []});
@@ -55,7 +59,7 @@ function Playground({ playId, clearPlayground, character }: { playId: string, cl
 
   const addMessage = (role: string, content: string, traits: Trait[]) => {
     const msgToAdd : Message = {
-        "role": role, 
+        "role": role,
         "content": role == 'user' ? content : '',
         "tokens": [],
         traits
@@ -65,113 +69,83 @@ function Playground({ playId, clearPlayground, character }: { playId: string, cl
       [character().id]: !(character().id in baselineMessage()) ? [msgToAdd] : [...baselineMessage()[character().id], msgToAdd]
     })
     setControlMessage({
-      ...controlMessage(), 
+      ...controlMessage(),
       [character().id]: !(character().id in controlMessage()) ? [msgToAdd] : [...controlMessage()[character().id], msgToAdd]
     })
   }
 
 
-const handleSubmit = async (inputPrompt: string, event : any = null) => {
-  var prompt = inputPrompt
-  if (event) {
-    event.preventDefault()
-    prompt = event.target.value.trim()
-    event.target.value = ''
-  }
-  textarea.style.height = '19px';
-  setPrompt('')
-  const traits : Trait[] = Object.values(character().traits)
-  addMessage("user", prompt, traits)
-  addMessage("assistant", "", traits)
-  if (prompt != null) {
-    try {
-      const [controlResponse, baselineResponse] = await Promise.all([
-          fetch(`${import.meta.env.VITE_ENDPOINT}/chat`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                playId,
-                prompt,
-                type: 'control',
-                character: character(),
-              }),
-          }),
-          fetch(`${import.meta.env.VITE_ENDPOINT}/chat`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              playId,
-              prompt,
-              type: 'baseline',
-              character: character(),
-            }),
-          }),
-      ]);
-
-      const baselineReader = baselineResponse?.body?.getReader();
-      const controlReader = controlResponse.body?.getReader();
-      const decoder = new TextDecoder("utf-8");
-
-      async function readStream(
-        reader: ReadableStreamDefaultReader<Uint8Array> | undefined,
-        messages: any,
-        setter: any
-      ) {
-        if (!reader) {
-          return;
-        }
-        const { done, value } = await reader.read();
-        if (done) {
-          return;
-        }
-        const decodedValue = decoder.decode(value, { stream: true });
-        const chunks = decodedValue.split("\n");
-        for (const chunk of chunks) {
-          const tokenObj = parseToken(chunk);
-          const msg = messages()[character().id]
-          if (tokenObj !== null) {
-            if (tokenObj.error) {
-              const errorMsg = {
-                role: "error",
-                content: parseErrorMsg(tokenObj.error),
-                tokens: [],
-                traits: []
-              }
-              setter({...messages(), [character().id] : [...msg.slice(0, -1), errorMsg]})
-              setBroke(true)
-              console.log(errorMsg)
-              return;
-            }
-           // console.log(messages());
-              const newMsg = {
-                role: "assistant",
-                content: "",
-                tokens: [...msg[msg.length-1].tokens, {text: tokenObj.data, corrs: []}],
-                traits
-              }
-              setter({...messages(), [character().id] : [...msg.slice(0, -1), newMsg]}) 
-          }
-        }
-        await readStream(reader, messages, setter);
-      }
-      await Promise.all([
-        readStream(controlReader, controlMessage, setControlMessage),
-        readStream(baselineReader, baselineMessage, setBaselineMessage),
-      ]);
-    } catch (error) {
-      console.log("ERROR")
-      console.error("Error streaming response:", error);
-      const errorMsg = {
-        role: "system",
-        content: "Error",
-        tokens: [],
-        traits: []
-      }
-      setControlMessage({...controlMessage(), [character().id]: [...controlMessage()[character().id], errorMsg]})
-      setBaselineMessage({...baselineMessage(), [character().id]: [...baselineMessage()[character().id], errorMsg]})
-      setBroke(true)
-    } finally {
+  const handleSubmit = async (inputPrompt: string, event : any = null) => {
+    var prompt = inputPrompt
+    if (event) {
+      event.preventDefault()
+      prompt = event.target.value.trim()
+      event.target.value = ''
     }
+    textarea.style.height = '19px';
+    setPrompt('')
+    const traits : Trait[] = Object.values(character().traits)
+    addMessage("user", prompt, traits)
+    addMessage("assistant", "", traits)
+    if (prompt != null) {
+      try {
+          console.log("endpoint is", rundpodServerlessEndpoint)
+
+          async function updateLLMText(jobId, messages, setter) {
+              for await (const chunk of rundpodServerlessEndpoint.stream(jobId)) {
+                  const tokenObj = parseToken(chunk.output);
+                  const msg = messages()[character().id]
+                  if (tokenObj !== null) {
+                      if (tokenObj.error) {
+                          const errorMsg = {
+                              role: "error",
+                              content: parseErrorMsg(tokenObj.error),
+                              tokens: [],
+                              traits: []
+                          }
+                          setter({...messages(), [character().id]: [...msg.slice(0, -1), errorMsg]})
+                          setBroke(true)
+                          console.log(errorMsg)
+                          return;
+                      }
+                      const newMsg = {
+                          role: "assistant",
+                          content: "",
+                          tokens: [...msg[msg.length - 1].tokens, {text: tokenObj.data, corrs: []}],
+                          traits
+                      }
+                      setter({...messages(), [character().id]: [...msg.slice(0, -1), newMsg]})
+                  }
+              }
+          }
+
+          await Promise.all([
+              ["control", controlMessage, setControlMessage],
+              ["baseline", baselineMessage, setBaselineMessage],
+          ].map(([chatType, messages, setter]) =>
+              rundpodServerlessEndpoint.run({
+                  input: {
+                    playId,
+                    prompt,
+                    character: character(),
+                    type: chatType
+                  }
+              }).then(({id}) => updateLLMText(id, messages, setter))
+          ))
+      } catch (error) {
+        console.log("ERROR")
+        console.error("Error streaming response:", error);
+        const errorMsg = {
+          role: "system",
+          content: "Error",
+          tokens: [],
+          traits: []
+        }
+        setControlMessage({...controlMessage(), [character().id]: [...controlMessage()[character().id], errorMsg]})
+        setBaselineMessage({...baselineMessage(), [character().id]: [...baselineMessage()[character().id], errorMsg]})
+        setBroke(true)
+      } finally {
+      }
     }
   };
 
