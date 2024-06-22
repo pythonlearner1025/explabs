@@ -31,7 +31,7 @@ function Playground({ playId, clearPlayground, character }: { playId: string, cl
     createEffect(() => {
         [[CONTROL_MESSAGES_KEY, controlMessage], [BASELINE_MESSAGES_KEY, baselineMessage]].forEach(([key, allMessages]) => {
             const messages: Message[] = allMessages()[character().id]
-            if (messages.length > 0) {
+            if (messages && messages.length > 0) {
                 localStorage.setItem(`${key}_${character().name}`, JSON.stringify(messages));
             }
     })});
